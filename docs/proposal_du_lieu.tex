@@ -1,0 +1,50 @@
+% ============================================================
+% Gửi C: dán mục này vào proposal (template ACL, biên dịch XeLaTeX).
+% Số liệu đã cập nhật sau khi gộp box trùng (02/11/2026).
+% ============================================================
+
+\section{Dữ liệu}
+
+Nhóm sử dụng bộ dữ liệu Zalo AI Challenge 2020 -- Traffic Sign Detection \citep{zalo2020}, gồm 4.500 ảnh có nhãn chụp đường phố Việt Nam, cùng độ phân giải $1622 \times 626$, thuộc 7 lớp biển báo: \textit{Nguy hiểm}, \textit{Cấm dừng và đỗ}, \textit{Cấm còn lại}, \textit{Cấm ngược chiều}, \textit{Hiệu lệnh}, \textit{Giới hạn tốc độ} và \textit{Cấm rẽ}. Nhãn của tập test công khai không được cung cấp, nên nhóm tự chia lại tập có nhãn.
+
+\paragraph{Làm sạch nhãn.} Khi kiểm tra trực quan, nhóm phát hiện nhiều biển bị gán lặp 2--6 box gần như trùng nhau. Trong 11.000 box gốc, 1.923 box (17,5\%, thuộc 747 ảnh) là box lặp. Nếu giữ nguyên, mỗi box lặp sẽ luôn bị tính là bỏ sót khi đánh giá, khiến recall tối đa trên tập test chỉ còn khoảng 77\% ngay cả với mô hình hoàn hảo. Vì hai biển thật đứng cạnh nhau gần như không chồng lên nhau, nhóm gộp các box \textit{cùng lớp} có IoU $\geq 0{,}45$ thành một box có tọa độ trung bình. Sau khi gộp còn 9.077 box; mọi số liệu dưới đây tính trên nhãn đã làm sạch.
+
+\paragraph{Đặc điểm chính.} Thống kê cho thấy hai khó khăn của bài toán (Bảng~\ref{tab:eda}):
+\begin{itemize}
+  \item \textbf{Biển báo rất nhỏ:} 77,6\% số box có diện tích dưới $32^2$ pixel (ngưỡng ``nhỏ'' của COCO), trung vị cạnh chỉ 16,5 pixel. Nếu thu ảnh về 640 pixel như cấu hình mặc định của YOLOv8, 68,9\% số box còn cạnh dưới 10 pixel.
+  \item \textbf{Mất cân bằng lớp:} lớp nhiều nhất (\textit{Nguy hiểm}, 2.329 box) gấp 4,8 lần lớp ít nhất (\textit{Cấm rẽ}, 489 box).
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\hline
+\textbf{Lớp} & \textbf{Số box} & \textbf{\% nhỏ} \\
+\hline
+Nguy hiểm        & 2.329 & 77,2 \\
+Cấm dừng và đỗ   & 1.945 & 71,0 \\
+Cấm còn lại      & 1.544 & 76,2 \\
+Cấm ngược chiều  & 1.134 & 90,5 \\
+Hiệu lệnh        &   835 & 85,3 \\
+Giới hạn tốc độ  &   801 & 77,8 \\
+Cấm rẽ           &   489 & 67,7 \\
+\hline
+Tổng             & 9.077 & 77,6 \\
+\hline
+\end{tabular}
+\caption{Số box theo lớp (sau khi gộp box lặp) và tỉ lệ box nhỏ (diện tích $< 32^2$ pixel).}
+\label{tab:eda}
+\end{table}
+
+\paragraph{Chia tập.} Mỗi ảnh có trường \texttt{street\_id}; các ảnh cùng một tuyến đường có nội dung gần giống nhau. Để tránh rò rỉ dữ liệu, nhóm chia theo nhóm \texttt{street\_id}, đồng thời phân tầng theo lớp hiếm nhất trong mỗi nhóm để mọi lớp đều có mặt ở cả ba tập. Do phải giữ nguyên từng nhóm, tỉ lệ thực tế là train 2.933 ảnh (65,2\%), val 696 ảnh (15,5\%), test 871 ảnh (19,4\%). Tập val dùng để chọn mô hình và siêu tham số; tập test chỉ được đánh giá một lần cho kết quả cuối cùng.
+
+\paragraph{Đánh giá.} Cả hai mô hình xuất dự đoán theo cùng định dạng COCO và được chấm bằng cùng một script dựa trên \texttt{pycocotools}, báo cáo mAP@0.5, mAP@0.5:0.95, AP theo nhóm kích thước (nhỏ/vừa/lớn) và AP theo từng lớp.
+
+% ---------- Thêm vào file .bib ----------
+% @misc{zalo2020,
+%   title  = {Zalo AI Challenge 2020: Traffic Sign Detection},
+%   author = {{Zalo AI}},
+%   year   = {2020},
+%   note   = {Bộ dữ liệu cuộc thi Zalo AI Challenge 2020}
+% }

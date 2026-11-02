@@ -226,3 +226,8 @@ __pycache__/
 *.pt
 preds/_test/
 reports/eval_test/
+data/clean/
+preds/_test/
+reports/eval_test/
+reports/vis*/
+reports/check_yolo/

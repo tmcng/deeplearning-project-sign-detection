@@ -1,0 +1,17 @@
+Số ảnh: 4500  (không có box: 0)
+Số box: 9077  (trung bình 2.02 box/ảnh, nhiều nhất 17)
+Độ phân giải phổ biến: [((1622, 626), 4500)]
+
+Số box theo lớp (nhiều -> ít):
+  [6] Nguy hiểm                             2329  (nhỏ 1799, vừa 472, lớn 58)
+  [2] Cấm dừng và đỗ                        1945  (nhỏ 1380, vừa 504, lớn 61)
+  [5] Cấm còn lại                           1544  (nhỏ 1177, vừa 341, lớn 26)
+  [1] Cấm ngược chiều                       1134  (nhỏ 1026, vừa 102, lớn 6)
+  [7] Hiệu lệnh                              835  (nhỏ 712, vừa 115, lớn 8)
+  [4] Giới hạn tốc độ                        801  (nhỏ 623, vừa 171, lớn 7)
+  [3] Cấm rẽ                                 489  (nhỏ 331, vừa 136, lớn 22)
+Tỉ lệ lớp nhiều nhất / ít nhất: 4.8 lần
+
+Nhóm kích thước (chuẩn COCO, ảnh gốc): small 7048 (77.6%), medium 1841 (20.3%), large 188 (2.1%)
+Cạnh box (sqrt(w*h)) ảnh gốc: trung vị 16.5px, p10 6.9px, p90 51.0px
+Sau resize về 640: trung vị 6.5px, 68.9% box có cạnh < 10px
