@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+za_traffic_2020/
+data/yolo/
+reports/vis*/
+reports/missed*/
+__pycache__/
+*.pt

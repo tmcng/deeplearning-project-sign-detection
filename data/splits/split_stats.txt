@@ -1,0 +1,6 @@
+train: 2933 ảnh, 6844 box
+       Cấm ngược chiều=878, Cấm dừng và đỗ=1533, Cấm rẽ=351, Giới hạn tốc độ=706, Cấm còn lại=1146, Nguy hiểm=1734, Hiệu lệnh=496
+val  : 696 ảnh, 1836 box
+       Cấm ngược chiều=190, Cấm dừng và đỗ=441, Cấm rẽ=104, Giới hạn tốc độ=159, Cấm còn lại=428, Nguy hiểm=340, Hiệu lệnh=174
+test : 871 ảnh, 2320 box
+       Cấm ngược chiều=348, Cấm dừng và đỗ=247, Cấm rẽ=101, Giới hạn tốc độ=84, Cấm còn lại=213, Nguy hiểm=975, Hiệu lệnh=352
