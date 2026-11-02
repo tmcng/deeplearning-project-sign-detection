@@ -59,7 +59,11 @@ def main():
                     help="cạnh (px) dưới mức này tính là 'nhỏ'; mặc định 32 theo COCO")
     args = ap.parse_args()
 
-    gt = COCO(args.gt)
+    # Tự đọc JSON bằng UTF-8: COCO(path) dùng bảng mã mặc định của máy, trên Windows
+    # (cp1252) sẽ lỗi với tên lớp tiếng Việt.
+    gt = COCO()
+    gt.dataset = json.loads(Path(args.gt).read_text(encoding="utf-8"))
+    gt.createIndex()
     preds = json.loads(Path(args.pred).read_text(encoding="utf-8"))
     if not preds:
         raise SystemExit("File dự đoán rỗng.")
@@ -75,9 +79,11 @@ def main():
     st = E.stats  # 0:mAP .5:.95, 1:mAP .5, 3/4/5: AP small/medium/large
 
     precision = E.eval["precision"]
+    cat_names = {int(c["id"]): c["name"] for c in gt.dataset["categories"]}
     per_class = {}
     for k, cid in enumerate(E.params.catIds):
-        name = gt.loadCats(cid)[0]["name"]
+        # cid có thể là kiểu số của numpy, nên tra bằng int() thay vì gt.loadCats()
+        name = cat_names[int(cid)]
         per_class[name] = {
             "AP50": ap_from_precision(precision, k, iou_index=0),
             "AP50_95": ap_from_precision(precision, k),
