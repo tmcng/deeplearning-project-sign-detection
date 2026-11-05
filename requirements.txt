@@ -1,4 +1,35 @@
+# ── Core Scientific Stack ─────────────────────────────────────────────────
 numpy
 matplotlib
 pillow
+pandas
+scipy
+
+# ── COCO Evaluation ───────────────────────────────────────────────────────
 pycocotools
+
+# ── Deep Learning ─────────────────────────────────────────────────────────
+# GPU: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+
+# ── Object Detection (Faster R-CNN) ───────────────────────────────────────
+albumentations
+opencv-python
+
+# ── Experiment Tracking ───────────────────────────────────────────────────
+wandb
+
+# ── FPS / Latency Measurement ─────────────────────────────────────────────
+psutil
+GPUtil
+
+# ── Dashcam Video Demo ────────────────────────────────────────────────────
+imageio
+imageio-ffmpeg
+
+# ── Notebook / Reporting ──────────────────────────────────────────────────
+jupyterlab
+ipywidgets
+tqdm
+seaborn
