@@ -231,3 +231,7 @@ preds/_test/
 reports/eval_test/
 reports/vis*/
 reports/check_yolo/
+
+data/yolo_tiled/
+runs/
+wandb/

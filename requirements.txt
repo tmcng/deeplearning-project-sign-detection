@@ -2,3 +2,7 @@ numpy
 matplotlib
 pillow
 pycocotools
+torch
+torchvision
+ultralytics
+wandb
