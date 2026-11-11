@@ -233,3 +233,5 @@ reports/vis*/
 reports/check_yolo/
 sign-detection/
 wandb/
+weights/
+preds/*.json
