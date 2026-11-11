@@ -219,7 +219,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 za_traffic_2020/
-data/yolo/
+data/yolo*/
 reports/vis*/
 reports/missed*/
 __pycache__/
@@ -231,3 +231,5 @@ preds/_test/
 reports/eval_test/
 reports/vis*/
 reports/check_yolo/
+sign-detection/
+wandb/
