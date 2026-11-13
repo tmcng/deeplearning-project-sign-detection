@@ -1,0 +1,24 @@
+# configs/trainer/gpu_fp16.yaml — GPU, AMP FP16
+
+optimizer:
+  name: "sgd"
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+
+lr_scheduler:
+  name: "multistep"
+  milestones: [12, 16]
+  gamma: 0.1
+
+num_epochs: 20
+batch_size: 8   # AMP cho phép batch lớn hơn
+eval_interval: 1
+mixed_precision: true
+
+gradient_clip:
+  enabled: true
+  max_norm: 1.0   # AMP dễ explode → clip an toàn
+
+save_best: true
+

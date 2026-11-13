@@ -1,0 +1,18 @@
+# configs/model/fasterrcnn_resnet50_fpn.yaml
+
+architecture: "fasterrcnn_resnet50_fpn"
+pretrained_weights: "COCO_V1"
+
+backbone:
+  name: "resnet50"
+  trainable_layers: 0   # 0=đóng băng, 3=mở layer3+4+FPN, 5=toàn bộ
+
+rpn:
+  anchor_sizes:  [[32], [64], [128], [256], [512]]
+  aspect_ratios: [[0.5, 1.0, 2.0], [0.5, 1.0, 2.0], [0.5, 1.0, 2.0],
+                  [0.5, 1.0, 2.0], [0.5, 1.0, 2.0]]
+
+transform:
+  min_size: 800
+  max_size: 1333
+

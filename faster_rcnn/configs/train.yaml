@@ -1,0 +1,14 @@
+# faster_rcnn/configs/train.yaml — config mặc định
+# python train.py --config configs/experiment/expXX.yaml
+
+paths:        local                    # local | server_gpu
+data:         dataset_v1               # dataset_v1 | dataset_v2_clean
+augmentation: no_aug                   # no_aug | basic | heavy
+model:        fasterrcnn_resnet50_fpn  # fasterrcnn_resnet50_fpn | fasterrcnn_resnet50_fpn_v2
+trainer:      gpu_fp32                 # gpu_fp32 | gpu_fp16 | debug_cpu
+
+wandb:
+  project: "Zalo-Traffic-Sign-FasterRCNN"
+  enabled: true
+  api_key: null   # null = đọc từ env WANDB_API_KEY
+

@@ -1,0 +1,24 @@
+# configs/trainer/gpu_fp32.yaml — GPU, FP32
+
+optimizer:
+  name: "sgd"
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+
+lr_scheduler:
+  name: "multistep"
+  milestones: [12, 16]
+  gamma: 0.1
+
+num_epochs: 20
+batch_size: 4
+eval_interval: 1
+mixed_precision: false
+
+gradient_clip:
+  enabled: false
+  max_norm: 1.0
+
+save_best: true
+

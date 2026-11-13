@@ -1,0 +1,8 @@
+# =============================================================================
+# configs/augmentation/no_aug.yaml
+# Không augment — dùng cho Baseline (Exp 1) và evaluation
+# =============================================================================
+
+enabled: false
+use_augment: false             # flag truyền vào ZaloCOCODataset
+

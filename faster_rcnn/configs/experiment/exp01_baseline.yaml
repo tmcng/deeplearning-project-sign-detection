@@ -1,0 +1,30 @@
+# Thí nghiệm 1: Baseline — Frozen backbone, anchors 32-512px, no aug
+
+_name: "exp01_baseline"
+_description: "Baseline: Frozen ResNet50+FPN, default anchors (32-512px), no aug"
+
+paths:        local
+data:         dataset_v1
+augmentation: no_aug
+trainer:      gpu_fp32
+
+model:
+  architecture: "fasterrcnn_resnet50_fpn"
+  pretrained_weights: "COCO_V1"
+  backbone:
+    trainable_layers: 0
+  rpn:
+    anchor_sizes:  [[32], [64], [128], [256], [512]]
+    aspect_ratios: [[0.5, 1.0, 2.0], [0.5, 1.0, 2.0], [0.5, 1.0, 2.0],
+                    [0.5, 1.0, 2.0], [0.5, 1.0, 2.0]]
+  transform:
+    min_size: 800
+    max_size: 1333
+
+output:
+  checkpoint_name: "fasterrcnn_baseline"
+  pred_json:       "predictions_val_exp01_baseline.json"
+
+wandb:
+  run_name: "exp01-baseline"
+

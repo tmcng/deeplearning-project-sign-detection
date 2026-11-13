@@ -1,0 +1,17 @@
+# configs/paths/local.yaml — máy cá nhân
+
+project_root: null   # null = tự resolve từ __file__
+
+data:
+  img_dir:    "data/images"
+  train_json: "data/splits/train.json"
+  val_json:   "data/splits/val.json"
+  test_json:  "data/splits/test.json"
+
+output:
+  checkpoint_dir: "faster_rcnn/checkpoints"
+  output_dir:     "faster_rcnn/outputs"
+  report_dir:     "reports/eval"
+
+num_workers: 2
+
