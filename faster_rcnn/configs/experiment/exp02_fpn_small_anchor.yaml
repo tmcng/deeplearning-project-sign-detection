@@ -1,25 +1,25 @@
 # Thí nghiệm 2: Mở khóa FPN + Anchor nhỏ (8-128px) để bắt biển < 32px
 
 _name: "exp02_fpn_small_anchor"
-_description: "FPN + Small Anchors (8-128px), trainable_layers=3, no aug"
+_description: "FPN + Small Anchors (8-128px), trainable_layers=3, max_size=1800, no aug"
 
-paths:        local
+paths:        server_gpu
 data:         dataset_v1
 augmentation: no_aug
-trainer:      gpu_fp32
+trainer:      gpu_fp16
 
 model:
   architecture: "fasterrcnn_resnet50_fpn"
   pretrained_weights: "COCO_V1"
   backbone:
-    trainable_layers: 3   # train FPN + layer3,4
+    trainable_layers: 3   # train FPN + layer2,3,4
   rpn:
     anchor_sizes:  [[8], [16], [32], [64], [128]]
-    aspect_ratios: [[0.5, 1.0, 2.0], [0.5, 1.0, 2.0], [0.5, 1.0, 2.0],
-                    [0.5, 1.0, 2.0], [0.5, 1.0, 2.0]]
+    aspect_ratios: [[0.8, 1.0, 1.25], [0.8, 1.0, 1.25], [0.8, 1.0, 1.25],
+                    [0.8, 1.0, 1.25], [0.8, 1.0, 1.25]]
   transform:
     min_size: 800
-    max_size: 1333
+    max_size: 1800        # Nâng max_size để ảnh panoramic 1622x626 không bị thu nhỏ
 
 output:
   checkpoint_name: "fasterrcnn_fpn_small_anchor"

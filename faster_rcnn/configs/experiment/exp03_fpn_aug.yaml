@@ -1,12 +1,12 @@
-# Thí nghiệm 3: FPN + Anchor nhỏ + Augmentation → tăng generalization
+# Thí nghiệm 3: FPN + Anchor nhỏ + Safe Augmentation → tăng generalization
 
 _name: "exp03_fpn_aug"
-_description: "FPN + Small Anchors (8-128px) + Basic Augmentation (flip+color)"
+_description: "FPN + Small Anchors (8-128px) + Safe Augmentation (brightness/contrast, no flip)"
 
-paths:        local
+paths:        server_gpu
 data:         dataset_v1
-augmentation: basic   # Flip + Brightness/Contrast
-trainer:      gpu_fp32
+augmentation: basic   # Brightness/Contrast an toàn (không lật ngang)
+trainer:      gpu_fp16
 
 model:
   architecture: "fasterrcnn_resnet50_fpn"
@@ -15,11 +15,11 @@ model:
     trainable_layers: 3
   rpn:
     anchor_sizes:  [[8], [16], [32], [64], [128]]
-    aspect_ratios: [[0.5, 1.0, 2.0], [0.5, 1.0, 2.0], [0.5, 1.0, 2.0],
-                    [0.5, 1.0, 2.0], [0.5, 1.0, 2.0]]
+    aspect_ratios: [[0.8, 1.0, 1.25], [0.8, 1.0, 1.25], [0.8, 1.0, 1.25],
+                    [0.8, 1.0, 1.25], [0.8, 1.0, 1.25]]
   transform:
     min_size: 800
-    max_size: 1333
+    max_size: 1800        # Nâng max_size để ảnh panoramic 1622x626 không bị thu nhỏ
 
 output:
   checkpoint_name: "fasterrcnn_fpn_aug"

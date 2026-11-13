@@ -3,10 +3,10 @@
 _name: "exp01_baseline"
 _description: "Baseline: Frozen ResNet50+FPN, default anchors (32-512px), no aug"
 
-paths:        local
+paths:        server_gpu
 data:         dataset_v1
 augmentation: no_aug
-trainer:      gpu_fp32
+trainer:      gpu_fp16
 
 model:
   architecture: "fasterrcnn_resnet50_fpn"

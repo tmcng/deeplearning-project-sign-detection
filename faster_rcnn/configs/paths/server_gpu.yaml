@@ -13,5 +13,5 @@ output:
   output_dir:     "faster_rcnn/outputs"
   report_dir:     "reports/eval"
 
-num_workers: 8   # server nhiều CPU core hơn
+num_workers: 2   # Kaggle T4 cấp 2-4 vCPU, 2 workers tối ưu tránh nghẽn deadlock /dev/shm
 
