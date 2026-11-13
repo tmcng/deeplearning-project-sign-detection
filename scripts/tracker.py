@@ -24,9 +24,11 @@ class WandbTracker:
             self.enabled = False
             return
 
-        # Đăng nhập trực tiếp bằng API Key nếu có truyền vào
-        if api_key:
-            self.wandb.login(key=api_key)
+        # Đăng nhập trực tiếp bằng API Key nếu có truyền vào hoặc đọc từ môi trường
+        import os
+        key = api_key or os.environ.get("WANDB_API_KEY")
+        if key:
+            self.wandb.login(key=key)
 
         # Khởi tạo Run
         try:
