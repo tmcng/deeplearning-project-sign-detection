@@ -7,6 +7,9 @@ import cv2
 import random
 from torch.utils.data import Dataset
 
+# Tắt đa luồng nội bộ OpenCV để tránh xung đột tài nguyên CPU khi DataLoader dùng num_workers > 0
+cv2.setNumThreads(0)
+
 
 class ZaloCOCODataset(Dataset):
     """
@@ -60,12 +63,11 @@ class ZaloCOCODataset(Dataset):
                 labels.append(ann['category_id'])
 
         if self.use_augment and len(boxes) > 0:
-            if random.random() < 0.5:
-                image = cv2.flip(image, 1)
-                boxes = [[w_img - b[2], b[1], w_img - b[0], b[3]] for b in boxes]
-
-            alpha = 1.0 + random.uniform(-0.2, 0.2)
-            beta  = random.uniform(-20, 20)
+            # Lưu ý an toàn cho biển báo giao thông:
+            # KHÔNG lật ngang (flip) vì làm đổi chiều biển cấm rẽ, biển chỉ hướng và lộn ngược số biển tốc độ.
+            # Chỉ áp dụng biến đổi độ sáng và độ tương phản nhẹ:
+            alpha = 1.0 + random.uniform(-0.15, 0.15)
+            beta  = random.uniform(-15, 15)
             image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
 
         if len(boxes) == 0:

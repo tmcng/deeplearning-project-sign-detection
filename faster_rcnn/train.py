@@ -45,8 +45,6 @@ def _build_cli_overrides(args) -> dict:
     overrides = {}
 
     trainer_overrides = {}
-    if args.trainer:
-        overrides["trainer"] = args.trainer
     if args.epochs is not None:
         trainer_overrides["num_epochs"] = args.epochs
     if args.batch_size is not None:
@@ -55,13 +53,21 @@ def _build_cli_overrides(args) -> dict:
         trainer_overrides["num_workers"] = args.num_workers
     if args.dry_run:
         trainer_overrides["dry_run"] = True
-    if trainer_overrides:
-        if isinstance(overrides.get("trainer"), str):
-            overrides["trainer"] = {}
-        overrides.setdefault("trainer", {}).update(trainer_overrides)
-
     if args.lr is not None:
-        overrides.setdefault("trainer", {}).setdefault("optimizer", {})["lr"] = args.lr
+        trainer_overrides.setdefault("optimizer", {})["lr"] = args.lr
+
+    if args.trainer:
+        trainer_file = Path(__file__).resolve().parent / "configs" / "trainer" / f"{args.trainer}.yaml"
+        if trainer_file.exists():
+            import yaml
+            from faster_rcnn.configs.config_loader import _deep_merge
+            with open(trainer_file, "r", encoding="utf-8") as f:
+                base_trainer = yaml.safe_load(f) or {}
+            overrides["trainer"] = _deep_merge(base_trainer, trainer_overrides)
+        else:
+            overrides["trainer"] = args.trainer
+    elif trainer_overrides:
+        overrides["trainer"] = trainer_overrides
 
     wandb_overrides = {}
     if args.wandb_key:
@@ -131,6 +137,7 @@ def train(args):
         shuffle=True,
         num_workers=num_workers,
         collate_fn=collate_fn,
+        pin_memory=(device.type == "cuda"),
     )
     val_loader = DataLoader(
         val_dataset,
@@ -138,6 +145,7 @@ def train(args):
         shuffle=False,
         num_workers=num_workers,
         collate_fn=collate_fn,
+        pin_memory=(device.type == "cuda"),
     )
     print(f"[DATASET] Train: {len(train_dataset)} ảnh | Val: {len(val_dataset)} ảnh "
           f"| augmentation={cfg['USE_AUGMENT']} | workers={num_workers}")
