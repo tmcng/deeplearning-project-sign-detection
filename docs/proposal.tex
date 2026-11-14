@@ -1,0 +1,160 @@
+\documentclass[11pt]{article}
+
+% ACL official style
+\usepackage[final]{acl}
+
+% Standard packages
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+% Vietnamese support - XeLaTeX
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+
+\renewcommand{\tablename}{Bảng}
+
+% ------------------------------------------------
+% TITLE AND AUTHORS
+% ------------------------------------------------
+
+\title{Phát hiện biển báo giao thông Việt Nam:\\
+So sánh YOLOv8 và Faster R-CNN\\
+(Proposal -- Nhóm 19)}
+
+\author{
+Hoàng Hải Anh \\ 24022248
+\And
+Tạ Mạnh Cường \\ 24022278
+\And
+Phạm Thế Hưng \\ 24022350
+\AND
+Học sâu -- GV: Nguyễn Việt Hà \\
+Trường Đại học Công nghệ, ĐHQGHN
+}
+
+\begin{document}
+
+\maketitle
+
+% ------------------------------------------------
+% 1. PROBLEM
+% ------------------------------------------------
+
+\section{Bài toán}
+
+Phát hiện biển báo giao thông là bài toán cốt lõi trong các hệ thống hỗ trợ lái xe nâng cao (ADAS) và xe tự hành. Trong điều kiện giao thông đường bộ Việt Nam, bài toán đặt ra nhiều thách thức đặc thù: camera hành trình góc rộng khiến đa số biển báo ở xa có kích thước cực nhỏ, nhiều biển đứng sát nhau tạo thành cụm, điều kiện chiếu sáng phức tạp và sự mất cân bằng lớn về số lượng mẫu giữa các loại biển.
+
+\paragraph{Đầu vào.}
+Một ảnh RGB $I$ kích thước $1622 \times 626 \times 3$ được chụp từ camera hành trình phía trước phương tiện giao thông.
+
+\paragraph{Đầu ra.}
+Danh sách các phát hiện $(b_i, c_i, s_i)$, trong đó $b_i = [x, y, w, h]$ là tọa độ hộp bao (tính theo pixel trên ảnh gốc), $c_i \in \{1, \dots, K\}$ với $K=7$ loại biển báo chuẩn và $s_i \in [0, 1]$ là độ tin cậy của dự đoán.
+
+% ------------------------------------------------
+% 2. DATASET
+% ------------------------------------------------
+
+\section{Dữ liệu}
+
+Nhóm sử dụng bộ dữ liệu \emph{Zalo AI Challenge 2020 -- Traffic Sign Detection} \citep{zalo2020traffic}, gồm 4.500 ảnh đường phố Việt Nam cùng độ phân giải $1622 \times 626$, thuộc 7 lớp biển báo: \textit{Nguy hiểm}, \textit{Cấm dừng và đỗ}, \textit{Cấm còn lại}, \textit{Cấm ngược chiều}, \textit{Hiệu lệnh}, \textit{Giới hạn tốc độ} và \textit{Cấm rẽ}. Do tập kiểm tra gốc không có nhãn công khai, nhóm tự chia lại tập dữ liệu có nhãn.
+
+\paragraph{Làm sạch nhãn.}
+Kiểm tra trực quan cho thấy 1.923 box (17,5\% trên tổng 11.000 box gốc, thuộc 747 ảnh) bị gán trùng lặp từ 2--6 lần cho cùng một biển báo vật lý. Nếu giữ nguyên, các box trùng này sẽ làm giảm recall trần xuống 77\%. Nhóm tiến hành gộp các box cùng lớp có $\text{IoU} \ge 0{,}45$ thành một box trung bình, thu được 9.077 box sạch.
+
+\paragraph{Chia tập dữ liệu.}
+Ảnh camera hành trình có tính phụ thuộc thời gian cao (các khung hình liên tiếp trên cùng đoạn đường rất giống nhau). Nhóm gom cụm theo tuyến đường (\texttt{street\_id}) và phân tầng theo lớp hiếm để chia tập, triệt tiêu hiện tượng rò rỉ dữ liệu (data leakage). Tỉ lệ thực tế đạt được: train 2.933 ảnh (65,2\%), val 696 ảnh (15,5\%) và test 871 ảnh (19,4\%).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Lớp} & \textbf{Số hộp} & \textbf{Tỉ lệ (\%)} & \textbf{Hộp nhỏ (\%)} \\
+\midrule
+Cấm ngược chiều  & 1.134 & 12,5 & 90,5 \\
+Cấm dừng và đỗ   & 1.945 & 21,4 & 71,0 \\
+Cấm rẽ           &   489 &  5,4 & 67,7 \\
+Giới hạn tốc độ  &   801 &  8,8 & 77,8 \\
+Cấm còn lại      & 1.544 & 17,0 & 76,2 \\
+Nguy hiểm        & 2.329 & 25,7 & 77,2 \\
+Hiệu lệnh        &   835 &  9,2 & 85,3 \\
+\midrule
+\textbf{Tổng}    & 9.077 & 100,0 & 77,6 \\
+\bottomrule
+\end{tabular}
+\caption{Thống kê dữ liệu sau khi làm sạch box trùng. Hộp nhỏ là hộp có diện tích $< 32^2$ pixel (chuẩn COCO).}
+\label{tab:eda}
+\end{table}
+
+\paragraph{Đặc điểm khám phá (EDA).}
+Bảng~\ref{tab:eda} thể hiện hai thách thức lớn nhất của dữ liệu:
+\begin{itemize}
+\itemsep0pt
+\item \textbf{Biển báo siêu nhỏ:} 77,6\% số hộp thuộc nhóm nhỏ (diện tích $< 32^2$). Cạnh hộp ($\sqrt{w \cdot h}$) trên ảnh gốc có trung vị chỉ 16,5 px ($p_{10}=6{,}9$, $p_{90}=51{,}0$). Khi co về kích thước 640 tiêu chuẩn, 68,9\% số hộp có cạnh dưới 10 px.
+\item \textbf{Mất cân bằng lớp:} Lớp nhiều nhất (\textit{Nguy hiểm}) gấp 4,8 lần lớp ít nhất (\textit{Cấm rẽ}).
+\end{itemize}
+
+% ------------------------------------------------
+% 3. BASELINES AND EXTENSIONS
+% ------------------------------------------------
+
+\section{Mô hình baseline và Hướng mở rộng}
+
+Nhóm chọn đại diện tiêu biểu của hai trường phái phát hiện đối tượng, khởi tạo với trọng số tiền huấn luyện COCO \citep{lin2014coco}:
+
+\begin{itemize}
+\itemsep0pt
+\item \textbf{YOLOv8s} \citep{jocher2023ultralytics}: Mô hình một giai đoạn (one-stage detector) tối ưu về tốc độ suy luận, chạy ở kích thước đầu vào $\texttt{imgsz}=640$.
+\item \textbf{Faster R-CNN ResNet50-FPN} \citep{ren2015faster,lin2017fpn}: Mô hình hai giai đoạn (two-stage detector) với cơ chế sinh đề xuất vùng (RPN) và mạng kim tự tháp đặc trưng (FPN).
+\end{itemize}
+
+\paragraph{Các hướng mở rộng dự kiến:}
+Dựa trên đặc tính dữ liệu, nhóm triển khai 3 hướng:
+(1) Khắc phục mất cân bằng lớp qua Focal Loss và Class Weights;
+(2) Tăng cường phát hiện biển nhỏ cho YOLOv8 thông qua kỹ thuật cắt lát ảnh (Tiling) và SAHI khi suy luận;
+(3) Tinh chỉnh tỉ lệ anchor nhỏ hơn trên Faster R-CNN, đo đạc độ trễ/FPS và xây dựng ứng dụng demo phát hiện thời gian thực trên video hành trình.
+
+% ------------------------------------------------
+% 4. EVALUATION
+% ------------------------------------------------
+
+\section{Cách đánh giá}
+
+Cả hai mô hình đều xuất kết quả suy luận ra định dạng JSON chuẩn gồm: \texttt{image\_id}, \texttt{category\_id}, \texttt{bbox} $[x,y,w,h]$ (tọa độ pixel gốc) và \texttt{score}. Nhóm dùng chung một script đánh giá dựa trên \texttt{pycocotools} để đảm bảo tính công bằng và nhất quán tuyệt đối.
+
+Các tiêu chí đánh giá chính:
+\begin{itemize}
+\itemsep0pt
+\item \textbf{Độ chính xác tổng thể:} mAP@0.5 và mAP@0.5:0.95.
+\item \textbf{Khả năng bắt vật thể nhỏ:} AP trên nhóm đối tượng nhỏ ($\text{AP}_{\text{small}}$, diện tích $< 32^2$).
+\item \textbf{Hiệu năng theo lớp:} AP chi tiết cho từng lớp trong 7 lớp.
+\item \textbf{Hiệu năng thực tế:} Tốc độ khung hình (FPS) và độ trễ suy luận (latency) đo trên cùng phần cứng.
+\end{itemize}
+
+% ------------------------------------------------
+% 5. TASK ASSIGNMENT
+% ------------------------------------------------
+
+\section{Phân công và Kế hoạch thực hiện}
+
+Dự án được triển khai trong 5 tuần theo cấu trúc phân công độc lập và kiểm tra chéo:
+
+\begin{itemize}
+\itemsep0pt
+\item \textbf{Hoàng Hải Anh (Thành viên A):} Phụ trách dữ liệu, EDA, phân chia tập dữ liệu chống rò rỉ, xây dựng script đánh giá chung bằng \texttt{pycocotools} và phân tích lỗi mô hình. Mở rộng: xử lý mất cân bằng lớp.
+\item \textbf{Tạ Mạnh Cường (Thành viên B):} Thiết lập mã nguồn huấn luyện YOLOv8, quản trị repository GitHub và theo dõi thực nghiệm qua Weights \& Biases. Mở rộng: Tiling ảnh và SAHI.
+\item \textbf{Phạm Thế Hưng (Thành viên C):} Thiết lập mã nguồn huấn luyện Faster R-CNN, quản lý template bài báo ACL, thực hiện so sánh đánh đổi tốc độ -- độ chính xác. Mở rộng: tối ưu hóa thời gian thực và xây dựng demo video hành trình.
+\end{itemize}
+
+Mỗi thành viên độc lập phát triển và commit mã nguồn phần việc của mình trên repository chung của nhóm.
+
+% ------------------------------------------------
+% REFERENCES
+% ------------------------------------------------
+
+\bibliography{custom}
+
+\end{document}
+

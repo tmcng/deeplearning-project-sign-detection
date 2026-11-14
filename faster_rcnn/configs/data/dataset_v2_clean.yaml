@@ -1,0 +1,19 @@
+# configs/data/dataset_v2_clean.yaml
+# v2: đã loại box w/h < 2px và oversample lớp thiểu số
+
+version: "v2_clean"
+
+num_classes: 8
+
+class_names:
+  - "__background__"
+  - "Cấm ngược chiều"
+  - "Cấm dừng và đỗ"
+  - "Cấm rẽ"
+  - "Giới hạn tốc độ"
+  - "Cấm còn lại"
+  - "Nguy hiểm"
+  - "Hiệu lệnh"
+
+conf_threshold: 0.001
+

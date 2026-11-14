@@ -1,4 +1,4 @@
-# Phát hiện Biển báo Giao thông Việt Nam (Zalo AI Traffic Sign 2020)
+﻿# Phát hiện Biển báo Giao thông Việt Nam (Zalo AI Traffic Sign 2020)
 
 Kho mã nguồn bài tập lớn môn **Học sâu (Deep Learning)** – Đề tài 1: So sánh và tối ưu hóa mô hình **One-stage (YOLOv8)** và **Two-stage (Faster R-CNN)** cho bài toán phát hiện biển báo giao thông nhỏ trên ảnh camera hành trình Việt Nam.
 
@@ -34,7 +34,7 @@ Kho mã nguồn bài tập lớn môn **Học sâu (Deep Learning)** – Đề t
     ├── make_split.py            # Chia train/val/test theo street_id và phân tầng theo lớp
     ├── coco_to_yolo.py          # Chuyển đổi nhãn COCO JSON sang định dạng Ultralytics YOLO
     ├── check_yolo_labels.py     # Vẽ kiểm tra nhãn YOLO (.txt) trên ảnh gốc
-    ├── train_yolo.py            # Huấn luyện YOLOv8 (hỗ trợ imgsz=640/1280, YOLOv8-P2, W&B)
+    ├── train_yolov8.py            # Huấn luyện YOLOv8 (hỗ trợ imgsz=640/1280, YOLOv8-P2, W&B)
     ├── predict_yolo.py          # Xuất dự đoán YOLO ra COCO JSON (hỗ trợ chuẩn & SAHI) và chấm điểm
     ├── tile_yolo_dataset.py     # Cắt mảnh (Tiling) ảnh 1622x626 cho tập huấn luyện YOLO
     ├── evaluate.py              # Script chấm điểm chung bằng pycocotools (mAP@0.5, mAP@0.5:0.95, AP_small)
@@ -63,12 +63,12 @@ Có thể chạy trực tiếp trên **Kaggle / Google Colab** bằng notebook [
 
 ```bash
 # Baseline YOLOv8s ở imgsz=640
-python scripts/train_yolo.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 640 --name yolov8s_640
+python scripts/train_yolov8.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 640 --name yolov8s_640
 python scripts/predict_yolo.py --weights runs/detect/yolov8s_640/weights/best.pt \
     --imgsz 640 --out preds/yolov8s_640_val.json --eval --name yolov8s_640
 
 # Phương pháp chính: YOLOv8s ở imgsz=1280 (hoặc thêm tầng P2 với --model yolov8s-p2.yaml --pretrained yolov8s.pt)
-python scripts/train_yolo.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 1280 --batch 8 --name yolov8s_1280
+python scripts/train_yolov8.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 1280 --batch 8 --name yolov8s_1280
 python scripts/predict_yolo.py --weights runs/detect/yolov8s_1280/weights/best.pt \
     --imgsz 1280 --out preds/yolov8s_1280_val.json --eval --name yolov8s_1280
 

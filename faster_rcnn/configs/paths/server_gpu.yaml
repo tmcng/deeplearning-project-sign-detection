@@ -1,0 +1,17 @@
+# configs/paths/server_gpu.yaml — server Linux / Kaggle / Colab
+
+project_root: null
+
+data:
+  img_dir:    "data/images"
+  train_json: "data/splits/train.json"
+  val_json:   "data/splits/val.json"
+  test_json:  "data/splits/test.json"
+
+output:
+  checkpoint_dir: "faster_rcnn/checkpoints"
+  output_dir:     "faster_rcnn/outputs"
+  report_dir:     "reports/eval"
+
+num_workers: 2   # Kaggle T4 cấp 2-4 vCPU, 2 workers tối ưu tránh nghẽn deadlock /dev/shm
+

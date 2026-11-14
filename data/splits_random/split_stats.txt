@@ -1,0 +1,8 @@
+Split ngẫu nhiên theo ảnh (seed 42) từ train+val của data/splits; test chép từ data/splits.
+train: 2933 ảnh, 5910 box, 33 đường
+       Cấm ngược chiều=719, Cấm dừng và đỗ=1395, Cấm rẽ=333, Giới hạn tốc độ=579, Cấm còn lại=1100, Nguy hiểm=1321, Hiệu lệnh=463
+val  : 696 ảnh, 1419 box, 32 đường
+       Cấm ngược chiều=162, Cấm dừng và đỗ=341, Cấm rẽ=75, Giới hạn tốc độ=143, Cấm còn lại=268, Nguy hiểm=318, Hiệu lệnh=112
+test : chép từ data/splits/test.json
+
+Rò rỉ: 669/696 ảnh val (96.1%) có khung hình liền kề trong train; 32 đường có mặt ở cả train và val.

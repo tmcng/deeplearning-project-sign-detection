@@ -1,0 +1,18 @@
+# configs/data/dataset_v1.yaml
+
+version: "v1"
+
+num_classes: 8   # 7 lớp + 1 background
+
+class_names:
+  - "__background__"
+  - "Cấm ngược chiều"
+  - "Cấm dừng và đỗ"
+  - "Cấm rẽ"
+  - "Giới hạn tốc độ"
+  - "Cấm còn lại"
+  - "Nguy hiểm"
+  - "Hiệu lệnh"
+
+conf_threshold: 0.001
+

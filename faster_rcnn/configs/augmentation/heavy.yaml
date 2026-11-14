@@ -1,0 +1,47 @@
+# configs/augmentation/heavy.yaml
+# Augmentation mạnh (cần albumentations: pip install albumentations)
+
+enabled: true
+use_augment: true
+
+transforms:
+  horizontal_flip:
+    enabled: true
+    p: 0.5
+
+  brightness_contrast:
+    enabled: true
+    alpha_range: [-0.3, 0.3]
+    beta_range:  [-30, 30]
+
+  random_rotate90:
+    enabled: true
+    p: 0.3
+
+  hue_saturation_value:
+    enabled: true
+    hue_shift_limit: 10
+    sat_shift_limit: 20
+    val_shift_limit: 20
+    p: 0.4
+
+  gaussian_blur:
+    enabled: true
+    blur_limit: [3, 5]
+    p: 0.2
+
+  coarse_dropout:
+    enabled: true
+    max_holes: 4
+    max_height: 32
+    max_width: 32
+    p: 0.3
+
+  mixup:
+    enabled: false
+    alpha: 0.4
+
+  cutmix:
+    enabled: false
+    alpha: 1.0
+
