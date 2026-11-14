@@ -10,6 +10,10 @@ scipy
 
 # COCO Evaluation
 pycocotools
+torch
+torchvision
+ultralytics
+wandb
 
 # Deep Learning
 # GPU: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118

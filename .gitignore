@@ -231,14 +231,3 @@ preds/_test/
 reports/eval_test/
 reports/vis*/
 reports/check_yolo/
-
-# Deep learning weights and outputs
-*.pth
-faster_rcnn/checkpoints/
-faster_rcnn/outputs/
-data/DashCam/
-streaming/
-sign-detection/
-wandb/
-weights/
-preds/*.json
