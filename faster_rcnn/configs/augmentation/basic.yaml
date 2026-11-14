@@ -1,0 +1,15 @@
+# configs/augmentation/basic.yaml — Brightness/Contrast an toàn (KHÔNG Flip ngang)
+
+enabled: true
+use_augment: true
+
+transforms:
+  horizontal_flip:
+    enabled: false
+    p: 0.0
+
+  brightness_contrast:
+    enabled: true
+    alpha_range: [-0.15, 0.15]
+    beta_range:  [-15, 15]
+
