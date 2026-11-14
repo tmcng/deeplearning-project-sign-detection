@@ -1,0 +1,8 @@
+Pool: 2933 ảnh, 28 tuyến đường. Tập kiểm tra chung (tuyến đường chưa thấy): 696 ảnh
+
+[street] train 1994 ảnh / 4057 box, val 939 ảnh / 1636 box
+   ảnh val có tuyến đường xuất hiện trong train: 0/939 (0.0%)
+   box val theo lớp: Cấm ngược chiều=266, Cấm dừng và đỗ=81, Cấm rẽ=34, Giới hạn tốc độ=64, Cấm còn lại=268, Nguy hiểm=780, Hiệu lệnh=143
+[random] train 1994 ảnh / 3888 box, val 939 ảnh / 1805 box
+   ảnh val có tuyến đường xuất hiện trong train: 939/939 (100.0%)
+   box val theo lớp: Cấm ngược chiều=236, Cấm dừng và đỗ=419, Cấm rẽ=101, Giới hạn tốc độ=177, Cấm còn lại=323, Nguy hiểm=414, Hiệu lệnh=135

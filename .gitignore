@@ -219,7 +219,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 za_traffic_2020/
-data/yolo/
+data/yolo*/
 reports/vis*/
 reports/missed*/
 __pycache__/
@@ -238,3 +238,7 @@ faster_rcnn/checkpoints/
 faster_rcnn/outputs/
 data/DashCam/
 streaming/
+sign-detection/
+wandb/
+weights/
+preds/*.json
