@@ -193,7 +193,24 @@ def main():
 
     from ultralytics import YOLO
 
-    model = YOLO(args.weights)
+    weights_path = Path(args.weights)
+    if not weights_path.exists():
+        # Tự động tìm lại trong runs/detect/runs/detect/... hoặc /kaggle/input nếu Ultralytics lưu lồng thư mục
+        alt = Path("runs/detect") / weights_path
+        if alt.exists():
+            weights_path = alt
+        else:
+            exp_dir = weights_path.parent.parent.name
+            for root in [Path("runs"), Path("/kaggle/input")]:
+                if root.exists():
+                    matches = list(root.rglob(f"{exp_dir}/weights/{weights_path.name}"))
+                    if matches:
+                        weights_path = matches[0]
+                        break
+        if weights_path.exists():
+            print(f"[Auto-resolve] Đã tìm thấy trọng số tại: {weights_path}")
+
+    model = YOLO(str(weights_path))
 
     if args.sahi:
         preds = predict_sahi(

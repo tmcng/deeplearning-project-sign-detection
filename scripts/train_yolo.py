@@ -51,7 +51,7 @@ def main():
                     help="Batch size (mặc định: 16 cho imgsz<=640, 8 cho imgsz>=1280)")
     ap.add_argument("--workers", type=int, default=4, help="Số luồng nạp dữ liệu")
     ap.add_argument("--device", default=None, help="Thiết bị chạy (vd: '0', '0,1', hoặc 'cpu'; mặc định tự chọn)")
-    ap.add_argument("--project", default="runs/detect", help="Thư mục gốc lưu kết quả train")
+    ap.add_argument("--project", default=str(Path("runs/detect").resolve()), help="Thư mục gốc lưu kết quả train")
     ap.add_argument("--name", default=None, help="Tên thư mục thí nghiệm (mặc định tự tạo từ model và imgsz)")
     ap.add_argument("--wandb-project", default="dl-traffic-sign-detection", help="Tên project trên Weights & Biases")
     ap.add_argument("--no-wandb", action="store_true", help="Tắt ghi log lên W&B")
