@@ -231,3 +231,8 @@ preds/_test/
 reports/eval_test/
 reports/vis*/
 reports/check_yolo/
+faster_rcnn/checkpoints/
+data/DashCam/
+*.pth
+*.zip
+*.mp4

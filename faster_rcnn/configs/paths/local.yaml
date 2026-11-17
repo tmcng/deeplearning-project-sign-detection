@@ -10,7 +10,7 @@ data:
 
 output:
   checkpoint_dir: "faster_rcnn/checkpoints"
-  output_dir:     "faster_rcnn/outputs"
+  output_dir:     "preds"
   report_dir:     "reports/eval"
 
 num_workers: 2

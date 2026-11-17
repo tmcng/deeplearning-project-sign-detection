@@ -7,18 +7,35 @@ import json
 import argparse
 from pathlib import Path
 
-import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x, **kwargs: x
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from faster_rcnn import config
-from faster_rcnn.dataset import ZaloCOCODataset, collate_fn
-from faster_rcnn.models import build_model
 from scripts.evaluate import main as run_eval_coco
+
+try:
+    import torch
+    from torch.utils.data import DataLoader
+    from faster_rcnn.dataset import ZaloCOCODataset, collate_fn
+    from faster_rcnn.models import build_model
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
+
+    class _NoGrad:
+        def __call__(self, *args, **kwargs):
+            if args and callable(args[0]):
+                return args[0]
+            def decorator(fn):
+                return fn
+            return decorator
+    torch = type("TorchDummy", (), {"no_grad": _NoGrad()})()
 
 
 def get_parser():
@@ -26,8 +43,14 @@ def get_parser():
     parser.add_argument("--config", "-c", type=str, default=None, metavar="YAML")
     parser.add_argument("--weights",    type=str,   default=None,
                         help="Custom checkpoint path. Mặc định: best → last.")
-    parser.add_argument("--split",      type=str,   default="test", choices=["val", "test"],
-                        help="Dataset split để evaluate (mặc định: test).")
+    parser.add_argument("--split",      type=str,   default="val", choices=["val", "test"],
+                        help="Dataset split để evaluate (mặc định: val).")
+    parser.add_argument("--pred",       type=str,   default=None,
+                        help="File JSON predictions đã có (nếu truyền, bỏ qua inference và chấm điểm ngay).")
+    parser.add_argument("--out-pred",   type=str,   default=None,
+                        help="Đường dẫn file predictions JSON xuất ra (mặc định theo config: preds/...).")
+    parser.add_argument("--name",       type=str,   default=None,
+                        help="Tên thí nghiệm ghi vào báo cáo (mặc định lấy theo config _name).")
     parser.add_argument("--conf-thresh",type=float, default=None)
     parser.add_argument("--batch-size", type=int,   default=None)
     parser.add_argument("--dry-run",    action="store_true")
@@ -153,6 +176,64 @@ def main():
     parser = get_parser()
     args   = parser.parse_args()
 
+    # Chế độ 1: Đánh giá trực tiếp từ file predictions JSON đã có (tiện lợi khi tải file từ Kaggle về)
+    if args.pred:
+        pred_path = Path(args.pred)
+        if not pred_path.is_file():
+            raise FileNotFoundError(f"Không tìm thấy file prediction: {pred_path}")
+
+        # Tự động suy ra tên thí nghiệm nếu không truyền --name
+        exp_name = args.name
+        if not exp_name:
+            stem = pred_path.stem
+            for prefix in ["predictions_val_", "predictions_test_", "predictions_"]:
+                if stem.startswith(prefix):
+                    stem = stem[len(prefix):]
+                    break
+            exp_name = stem
+
+        report_dir = "reports/eval"
+        gt_path = f"data/splits/{args.split}.json"
+
+        # Nếu có truyền config thì lấy đường dẫn chuẩn từ config
+        if args.config:
+            cfg = config.load(args.config)
+            gt_path = cfg["VAL_JSON_PATH"] if args.split == "val" else cfg["TEST_JSON_PATH"]
+            report_dir = cfg.get("REPORT_EVAL_DIR", report_dir)
+
+        print("=" * 54)
+        print(f"  EVALUATE TỪ FILE PREDICTIONS: {pred_path}")
+        print(f"  Thí nghiệm: {exp_name} | split={args.split}")
+        print(f"  Ground truth: {gt_path}")
+        print("=" * 54)
+
+        eval_argv = [
+            "evaluate.py",
+            "--gt", str(gt_path),
+            "--pred", str(pred_path),
+            "--name", str(exp_name),
+            "--out", str(report_dir),
+        ]
+        sys_argv_backup = sys.argv
+        try:
+            sys.argv = eval_argv
+            run_eval_coco()
+        finally:
+            sys.argv = sys_argv_backup
+
+        print("=" * 54)
+        print("  EVALUATE HOÀN TẤT")
+        print("=" * 54)
+        return
+
+    # Chế độ 2: Chạy inference từ checkpoint model
+    if not HAS_TORCH:
+        raise ImportError(
+            "Cần cài đặt PyTorch để chạy model inference.\n"
+            "Nếu bạn đã có sẵn file predictions JSON (ví dụ tải từ Kaggle về), "
+            "hãy chạy với cờ --pred: python faster_rcnn/evaluate.py --pred <đường_dẫn_file.json>"
+        )
+
     cli_overrides = {}
     if args.batch_size is not None:
         cli_overrides.setdefault("trainer", {})["batch_size"] = args.batch_size
@@ -161,7 +242,7 @@ def main():
 
     cfg = config.load(args.config, cli_overrides or None)
 
-    exp_name    = cfg.get("_name", "unnamed")
+    exp_name    = args.name or cfg.get("_name", "unnamed")
     is_dry_run  = cfg["DRY_RUN"]
     conf_thresh = args.conf_thresh if args.conf_thresh is not None else cfg["CONF_THRESHOLD"]
 
@@ -214,7 +295,7 @@ def main():
 
     # 2. Inference & lưu predictions JSON
     preds = predict(model, loader, device, conf_thresh=conf_thresh, dry_run=is_dry_run)
-    pred_path = cfg["OUTPUT_PRED_JSON"]
+    pred_path = args.out_pred or cfg["OUTPUT_PRED_JSON"]
     os.makedirs(os.path.dirname(pred_path), exist_ok=True)
     with open(pred_path, "w", encoding="utf-8") as f:
         json.dump(preds, f, indent=2)
