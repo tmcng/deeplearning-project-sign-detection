@@ -14,7 +14,7 @@ Nếu chia ảnh ngẫu nhiên (không theo đường), val có còn đo đúng 
 
 - Split ngẫu nhiên lấy chính train + val của split theo đường rồi chia lại theo từng ảnh. Hai mô hình có cùng số ảnh train và cùng test.
 - Mức rò rỉ (từ `data/splits_random/split_stats.txt`): **96.1% ảnh val ngẫu nhiên có khung hình liền kề nằm trong train.**
-- Hai lần train giữ nguyên mọi thứ (YOLOv8n, 50 epoch, imgsz 640, batch 16, seed 0), chỉ đổi dữ liệu.
+- Hai lần train giữ nguyên mọi thứ (YOLOv8n, imgsz 1280, cùng số epoch, batch, seed), chỉ đổi dữ liệu.
 
 Dự đoán:
 - mAP trên val ngẫu nhiên sẽ cao hơn hẳn mAP trên val theo đường.
@@ -64,10 +64,20 @@ Cell 7: tải về `reports/eval_ro_ri/` và `preds/yolov8n_*` (Output > Downloa
 
 ## Kết quả
 
-| Mô hình | mAP@0.5 val | mAP@0.5:0.95 val | mAP@0.5 test (tuần 5) |
-|---|---|---|---|
-| yolov8n_street | | | |
-| yolov8n_random | | | |
+YOLOv8n, imgsz 1280 (theo commit 93cc1f3). Số liệu lấy từ `reports/eval_leak/`.
+
+| Mô hình | mAP@0.5 val | mAP@0.5:0.95 val | mAP@0.5 test | mAP@0.5:0.95 test |
+|---|---|---|---|---|
+| Split theo đường (street) | 62.9 | 39.9 | 69.9 | 47.0 |
+| Split ngẫu nhiên (random) | **78.5** | **50.7** | 72.8 | 48.5 |
+| Chênh lệch (random - street) | +15.6 | +10.8 | +2.9 | +1.5 |
+
+Kết luận:
+- **Trên val, split ngẫu nhiên cao hơn 15.6 điểm mAP@0.5.** Trên cùng test gồm 5 đường mới, nó chỉ cao hơn 2.9 điểm. Vậy phần lớn khoảng cách trên val là do rò rỉ: 96% ảnh val ngẫu nhiên có khung hình liền kề nằm trong train.
+- **Nếu tin val ngẫu nhiên, ta đánh giá quá cao 5.7 điểm** (78.5 trên val so với 72.8 trên đường mới).
+- Phần hơn 2.9 điểm còn lại trên test có thể vì mô hình split ngẫu nhiên được train trên nhiều đường hơn (33 so với 28). Như vậy dữ liệu đa dạng hơn cũng có ích.
+- Val theo đường thấp hơn test theo đường (62.9 so với 69.9). Nghĩa là 5 đường của val khó hơn 5 đường của test. Chỉ có 5 đường nên kết quả dao động nhiều, và điều này nên ghi vào Limitations.
+- Test đã được chấm trong tuần 2, sớm hơn quy ước "tuần 5". Hai mô hình này không dùng để chọn cấu hình, nên không ảnh hưởng tới kết quả chính, nhưng cần nói rõ trong báo cáo.
 
 Lưu ý khi viết vào Analysis:
 - Hai tập val có phân bố lớp hơi khác nhau. "Cấm còn lại" chiếm 19% box val ngẫu nhiên và 24% box val theo đường. "Nguy hiểm" chiếm 22% và 17%.
