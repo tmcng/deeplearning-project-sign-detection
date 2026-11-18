@@ -72,6 +72,9 @@ def main():
                     help="Tß╗ë lß╗ç tß║¡p train sß╗¡ dß╗Ñng (vd: 0.07 ~ 200 ß║únh ─æß╗â chß║íy thß╗¡ nhanh ß╗ƒ tuß║ºn 1)")
     ap.add_argument("--seed", type=int, default=0, help="Seed cß╗æ ─æß╗ïnh ─æß╗â t├íi tß║ío kß║┐t quß║ú")
     ap.add_argument("--exist-ok", action="store_true", help="Ghi ─æ├¿ v├áo th╞░ mß╗Ñc th├¡ nghiß╗çm nß║┐u ─æ├ú tß╗ôn tß║íi")
+    ap.add_argument("--cls-pw", type=float, default=0.0,
+                    help="Trọng số lớp theo nghịch đảo tần suất, mũ cls_pw (0 = tắt, 1 = đầy đủ). "
+                         "Cần ultralytics >= 8.4.100 (thí nghiệm mất cân bằng lớp, tuần 4)")
     args = ap.parse_args()
 
     data_path = Path(args.data)
@@ -119,6 +122,8 @@ def main():
     )
     if args.device is not None:
         train_kwargs["device"] = args.device
+    if args.cls_pw > 0:  # chỉ truyền khi bật, để bản ultralytics cũ (chưa có cls_pw) vẫn chạy được
+        train_kwargs["cls_pw"] = args.cls_pw
 
     print(f"\n=== Bß║»t ─æß║ºu huß║Ñn luyß╗çn {exp_name} ===")
     print(f"  Model : {args.model}" + (f" (pretrained: {args.pretrained})" if args.pretrained else ""))
