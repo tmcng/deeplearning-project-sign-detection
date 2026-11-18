@@ -70,6 +70,8 @@ Cấu hình tốt nhất do B gửi (#7) là `yolov8s_1280`: YOLOv8s, ảnh gố
 
 ## Chạy trên Kaggle (GPU T4)
 
+Cách nhanh nhất là dùng notebook có sẵn `notebooks/imbalance_kaggle.ipynb`: import lên Kaggle, mỗi lần chạy đổi biến `RUN`. Các cell dưới đây là phiên bản rút gọn của cùng các bước đó.
+
 Cell 1: cài đặt, ghim đúng phiên bản của B.
 ```bash
 !git clone https://github.com/tmcng/deeplearning-project-sign-detection.git
