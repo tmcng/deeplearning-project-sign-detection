@@ -1,9 +1,9 @@
 """Oversampling lớp hiếm cho tập train YOLO (thí nghiệm mất cân bằng lớp, tuần 4).
 
 Cách chạy (trên thư mục do coco_to_yolo.py hoặc tile_yolo_dataset.py tạo ra):
-    python scripts/oversample_yolo.py --yolo data/yolo_tiled --thr 0.3
+    python scripts/oversample_yolo.py --yolo data/yolo --thr 0.3
     # rồi train như bình thường, chỉ đổi file data:
-    python scripts/train_yolov8.py --data data/yolo_tiled/data_rfs.yaml ...
+    python scripts/train_yolov8.py --data data/yolo/data_rfs.yaml ...
 
 Kết quả (ghi vào chính thư mục --yolo, không sửa ảnh hay nhãn):
     train_rfs.txt   : danh sách ảnh train, ảnh chứa lớp hiếm xuất hiện nhiều lần
