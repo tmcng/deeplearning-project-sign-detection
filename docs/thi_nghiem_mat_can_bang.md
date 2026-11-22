@@ -133,10 +133,59 @@ Trả lời theo thứ tự:
 
 ## Kết quả
 
-Điền sau khi chạy. Bảng chi tiết sinh tự động ở `reports/imbalance/so_sanh.md`.
+Train trên Kaggle T4, ultralytics 8.4.204. Cả hai lần đều chạy đủ 50 epoch, không dừng sớm. `args.yaml` xác nhận chỉ khác baseline đúng một yếu tố. Log train, biểu đồ và ma trận nhầm lẫn của Ultralytics nằm trong `reports/imbalance/<tên>/`.
 
-| Tên | mAP@0.5 | AP50 Cấm rẽ | AP50 Giới hạn tốc độ | AP50 Hiệu lệnh | Sai lớp Cấm rẽ | Sai lớp Giới hạn tốc độ |
-|---|---|---|---|---|---|---|
-| yolov8s_1280 (baseline) | 82.2 | 75.0 | 77.7 | 78.6 | 14.3% | 11.1% |
-| imb_rfs | | | | | | |
-| imb_clspw | | | | | | |
+| Tên | mAP@0.5 | mAP@0.5:0.95 | AP_small | AP50 Cấm rẽ | AP50 Giới hạn tốc độ | AP50 Hiệu lệnh | Sai lớp Cấm rẽ | Sai lớp Giới hạn tốc độ | Báo nhầm nền |
+|---|---|---|---|---|---|---|---|---|---|
+| yolov8s_1280 (baseline) | **82.2** | **56.6** | **50.2** | **75.0** | **77.7** | 78.6 | 14.3% | **11.1%** | 74 |
+| imb_rfs (oversampling) | 81.0 | 55.8 | 49.6 | 71.4 | 73.1 | **80.7** | 19.4% | 14.4% | 77 |
+| imb_clspw (cls_pw 0.5) | 81.1 | 55.7 | 49.7 | 74.9 | 71.6 | 78.7 | **10.2%** | 11.8% | **68** |
+
+- Bảng đủ 7 lớp (AP, recall, sai lớp): `reports/imbalance/so_sanh.md`.
+- Phân tích lỗi từng mô hình: `reports/errors/imb_*/`.
+
+### Chênh lệch có ý nghĩa không? (`scripts/bootstrap_ap.py`)
+
+Mỗi lần lấy mẫu lại ngẫu nhiên 696 ảnh val, có hoàn lại, rồi tính AP50 của cả ba mô hình trên cùng bộ ảnh đó. Lặp 1000 lần (paired bootstrap). Bảng dưới là chênh lệch AP50 so với baseline, kèm khoảng tin cậy 95%:
+
+| Lớp | imb_rfs | imb_clspw |
+|---|---|---|
+| Cấm rẽ | −3.6 [−10.2, +2.7] | −0.1 [−5.4, +4.8] |
+| Giới hạn tốc độ | −4.6 [−9.4, +0.2] | **−6.1 [−10.2, −1.6]** |
+| Hiệu lệnh | +2.1 [−1.0, +5.9] | +0.1 [−3.6, +3.9] |
+| Cấm còn lại | +0.9 [−1.8, +3.4] | −1.0 [−3.4, +1.7] |
+| mAP@0.5 | −1.2 [−2.6, +0.4] | −1.1 [−2.5, +0.2] |
+
+- **Chỉ có một thay đổi chắc chắn: `cls_pw` làm giảm AP của Giới hạn tốc độ.** Mọi thay đổi khác đều nằm trong khoảng dao động do chọn ảnh val.
+- Khoảng tin cậy của Cấm rẽ rộng tới khoảng ±6 điểm, vì val chỉ có 98 biển lớp này. Muốn thấy được một cải thiện vài điểm thì cần tập val lớn hơn nhiều.
+- Bootstrap chỉ đo dao động do chọn ảnh val. Nó chưa tính dao động giữa các lần train, vì mỗi cấu hình mới train 1 lần. Dao động thật còn lớn hơn.
+
+### Kết luận
+
+**Cả hai cách cân bằng lớp đều không cải thiện lớp hiếm, và mAP chung giảm khoảng 1 điểm (không có ý nghĩa thống kê).** Bốn lý do, đều có số liệu kiểm chứng:
+
+1. **Lỗi chỉ bị chuyển chỗ, không mất đi.**
+   - Tổng số biển bị nhầm lẫn giữa 3 lớp tròn viền đỏ không giảm: baseline 47, oversampling 56, `cls_pw` 50.
+   - Ví dụ với `cls_pw`: Cấm rẽ có trọng số cao nhất (1.47) nên mô hình dự đoán Cấm rẽ nhiều hơn (79 → 90 box). Số biển Cấm rẽ được nhận đúng tăng thêm 3 (70 → 73), sai lớp giảm (14.3% → 10.2%). Nhưng số box dự đoán Cấm rẽ mà sai gần gấp đôi (9 → 17): biển Giới hạn tốc độ bị đoán thành Cấm rẽ tăng 3 → 6, biển Cấm còn lại bị đoán thành Cấm rẽ tăng 4 → 8.
+   - Nên AP của Cấm rẽ đứng yên (75.0 → 74.9), còn Giới hạn tốc độ (trọng số chỉ 1.08) bị kéo sang Cấm rẽ và giảm 6.1 điểm.
+   - **Trọng số chỉ đổi ranh giới quyết định giữa các lớp trông giống nhau. Nó không giúp mô hình phân biệt các lớp đó tốt hơn.**
+2. **Oversampling lặp luôn chính lớp gây nhầm.**
+   - 49% ảnh có Giới hạn tốc độ cũng có Cấm còn lại. Tỉ lệ chung chỉ là 25%, vì biển tốc độ hay đứng chung cột với biển cấm.
+   - Vì vậy RFS lặp Cấm còn lại 1.33 lần, cùng với Giới hạn tốc độ (1.74 lần).
+   - Kết quả: biển Giới hạn tốc độ bị đoán thành Cấm còn lại tăng 14 → 18, biển Cấm rẽ bị đoán thành Cấm còn lại tăng 8 → 15. Số box dự đoán "Cấm còn lại" mà sai tăng từ 37 lên 55.
+3. **Mất cân bằng lớp không phải nguồn lỗi chính.**
+   - Ở baseline, chỉ 3.2% biển bị gán sai lớp, trong khi 16.7% bị bỏ sót, chủ yếu là biển nhỏ: 74% biển dưới 8 px bị bỏ sót.
+   - Cân bằng lớp không tác động tới bỏ sót. Recall theo kích thước gần như không đổi: nhóm 8–16 px lần lượt 74.6%, 71.1%, 73.5%.
+   - Kể cả sửa hết lỗi nhầm lớp thì recall chung cũng chỉ tăng tối đa khoảng 3 điểm.
+4. **Mức mất cân bằng vốn không lớn** (4.4 lần, theo số box). Các phương pháp như RFS được thiết kế cho dữ liệu đuôi dài, nơi lớp hiếm ít hơn hàng trăm lần.
+
+Hai điểm phụ:
+- **Không thấy học thuộc (overfit) do lặp ảnh.** Loss phân loại trên val của `imb_rfs` vẫn giảm tới cuối (0.81 ở epoch 8, 0.62 ở epoch 50), giống `imb_clspw`.
+- **Vì sao `imb_clspw` báo nhầm nền ít hơn** (74 → 68): giảm trọng số các lớp phổ biến làm mô hình bớt tự tin hơn khi dự đoán chúng. Chênh lệch này nhỏ.
+
+**Hướng tốt hơn cho lớp hiếm:** lỗi nằm ở chỗ ba lớp tròn viền đỏ trông giống nhau khi biển nhỏ, nên cần cho mô hình nhìn rõ phần giữa biển:
+- tăng độ phân giải hoặc thêm đầu ra P2 cho biển nhỏ;
+- dùng bước phân loại lại (crop biển rồi phân loại ở độ phân giải cao);
+- sửa nhãn sai giữa các lớp này: tuần 1 đã thấy 2 box sai lớp đúng kiểu này trong 20 ảnh.
+
+Cấu hình cuối cùng vẫn là `yolov8s_1280` không cân bằng lớp.
