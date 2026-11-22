@@ -1,0 +1,48 @@
+{
+  "rows": [
+    {
+      "mAP50": 64.8,
+      "mAP50_95": 41.6,
+      "AP_small": 33.5,
+      "AP_medium": 68.1,
+      "AP_large": 50.4
+    },
+    {
+      "mAP50": 72.5,
+      "mAP50_95": 47.7,
+      "AP_small": 40.3,
+      "AP_medium": 71.2,
+      "AP_large": 51.9
+    },
+    {
+      "mAP50": 75.2,
+      "mAP50_95": 48.6,
+      "AP_small": 41.3,
+      "AP_medium": 71.8,
+      "AP_large": 53.4
+    }
+  ],
+  "deltas": {
+    "0->1": {
+      "mAP50": 7.63,
+      "mAP50_95": 6.17,
+      "AP_small": 6.85,
+      "AP_medium": 3.12,
+      "AP_large": 1.51
+    },
+    "1->2": {
+      "mAP50": 2.75,
+      "mAP50_95": 0.84,
+      "AP_small": 0.98,
+      "AP_medium": 0.59,
+      "AP_large": 1.52
+    },
+    "0->2": {
+      "mAP50": 10.38,
+      "mAP50_95": 7.01,
+      "AP_small": 7.83,
+      "AP_medium": 3.71,
+      "AP_large": 3.03
+    }
+  }
+}

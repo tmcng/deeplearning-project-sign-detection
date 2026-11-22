@@ -1,0 +1,4 @@
+exp01_baseline -> exp02_fpn_small_anchor {'mAP50': 7.63, 'mAP50_95': 6.17, 'AP_small': 6.85}
+exp02_fpn_small_anchor -> exp03_fpn_aug {'mAP50': 2.75, 'mAP50_95': 0.84, 'AP_small': 0.98}
+exp01_baseline -> exp03_fpn_aug {'mAP50': 10.38, 'mAP50_95': 7.01, 'AP_small': 7.83}
+PASS: all 37 artifact hashes match; deltas calculated from source JSON.

@@ -24,8 +24,16 @@ def verify(directory):
         assert float(row['pipeline_ms']) >= float(row['infer_ms']) > 0
     fps = {}
     for kind in ('infer', 'pipeline'):
-        fps[kind] = len(measured) * 1000 / sum(float(r[kind + '_ms']) for r in measured)
+        values = sorted(float(r[kind + '_ms']) for r in measured)
+        fps[kind] = len(measured) * 1000 / sum(values)
         assert math.isclose(fps[kind], summary[kind + '_fps'], rel_tol=1e-10)
+        assert math.isclose(sum(values) / len(values), summary[kind + '_latency_ms']['mean'], rel_tol=1e-10)
+        for percentile in (50, 95):
+            index = (len(values) - 1) * percentile / 100
+            lower = math.floor(index)
+            upper = math.ceil(index)
+            interpolated = values[lower] + (values[upper] - values[lower]) * (index - lower)
+            assert math.isclose(interpolated, summary[kind + '_latency_ms']['p' + str(percentile)], rel_tol=1e-10)
     image = cv2.imread(str(root / 'snapshot.jpg'))
     assert image is not None
     assert [image.shape[1], image.shape[0]] == summary['source_dimensions']

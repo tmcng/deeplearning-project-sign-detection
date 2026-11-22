@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "status": "source_snapshot_only_not_final_results_freeze",
+  "created_utc": "2026-11-22T15:32:47.621881+00:00",
+  "git_revision": "aabe845123bcecd38da8ab0df15dbb6a0ffc5e95",
+  "git_branch": "faster-rcnn",
+  "git_worktree_status": "?? artifacts/\n?? docs/realtime_report.md\n?? scripts/freeze_results.py",
+  "limitations": [
+    "Hashing establishes artifact identity, not scientific validity.",
+    "Historical JSON metrics are not rerun by this script.",
+    "Final freeze requires verified paired benchmarks and demo evidence; review manually."
+  ],
+  "files": [
+    {
+      "path": "data/splits/test.json",
+      "bytes": 302285,
+      "sha256": "dcb17cf77ed0b5929335eb482244f9a1e20ff1c4e853e76a5d63003f2a59b4be"
+    },
+    {
+      "path": "data/splits/train.json",
+      "bytes": 978895,
+      "sha256": "669c51ad0d68bfe156b9762b17b3aa80eec42cc33843e3045d5c049e2ce5fa22"
+    },
+    {
+      "path": "data/splits/val.json",
+      "bytes": 268336,
+      "sha256": "4cd49490a5cd635492d3d681b470f70368c418b33f6966b78a6d8eb25dacad42"
+    },
+    {
+      "path": "faster_rcnn/configs/augmentation/basic.yaml",
+      "bytes": 298,
+      "sha256": "ee129fc3410e8c423c46a6d357f4e771eb8e5b0ee25dc7aea0b43bf44f3bbdb5"
+    },
+    {
+      "path": "faster_rcnn/configs/augmentation/heavy.yaml",
+      "bytes": 783,
+      "sha256": "748b5b20df0294a65d4e9a3456c6fcb9c1d9251a93cfa45b900953755deb852e"
+    },
+    {
+      "path": "faster_rcnn/configs/augmentation/no_aug.yaml",
+      "bytes": 351,
+      "sha256": "c0d21993d780598c63ace2e243b3ebb7916e71abaa964cf5333f7364b92ec0a5"
+    },
+    {
+      "path": "faster_rcnn/configs/data/dataset_v1.yaml",
+      "bytes": 333,
+      "sha256": "fe591aea8b7cc317a94942e941fa0bec9e44a902bff7d21de6219d0328bf918f"
+    },
+    {
+      "path": "faster_rcnn/configs/data/dataset_v2_clean.yaml",
+      "bytes": 385,
+      "sha256": "c3e217f6ff1fed1c40ad8032d54720ec6a45ccd085aa49171f560315bc280cc5"
+    },
+    {
+      "path": "faster_rcnn/configs/experiment/exp01_baseline.yaml",
+      "bytes": 804,
+      "sha256": "a286096c0a4a391581583d98d4f6720cfc923a5a3f3517899db89f321373a064"
+    },
+    {
+      "path": "faster_rcnn/configs/experiment/exp02_fpn_small_anchor.yaml",
+      "bytes": 956,
+      "sha256": "91ae761474e9c38a205ca9ab622f8a94407246b663d8ec54ce245af004234e12"
+    },
+    {
+      "path": "faster_rcnn/configs/experiment/exp03_fpn_aug.yaml",
+      "bytes": 956,
+      "sha256": "cb20ef982aed679df60e27689e81a3025aea38c607630dc353ca4580f321f23e"
+    },
+    {
+      "path": "faster_rcnn/configs/model/fasterrcnn_resnet50_fpn.yaml",
+      "bytes": 464,
+      "sha256": "dbdf4ef5331f27fe482b60b57b8fb65f2808d6492d18f83e13e133423a45aa52"
+    },
+    {
+      "path": "faster_rcnn/configs/model/fasterrcnn_resnet50_fpn_v2.yaml",
+      "bytes": 514,
+      "sha256": "10dfc7892a21921d82dd589e89be44f8389282b24c5f977482db112405ba1b2d"
+    },
+    {
+      "path": "faster_rcnn/configs/paths/local.yaml",
+      "bytes": 399,
+      "sha256": "3feda1efd37ddaad6b0a147eedca2e89b5b421b00de045cccbfb814b3c17e7f7"
+    },
+    {
+      "path": "faster_rcnn/configs/paths/server_gpu.yaml",
+      "bytes": 464,
+      "sha256": "53cd7d310b15cdd50838a4c2e7b68b3825d4eab8a6f8266826dbc2553f5004b4"
+    },
+    {
+      "path": "faster_rcnn/configs/train.yaml",
+      "bytes": 616,
+      "sha256": "33f9b9e5daaab2ab7927b341ac5bd93771ccea7e5e5cffbabc9b890acd501f7b"
+    },
+    {
+      "path": "faster_rcnn/configs/trainer/debug_cpu.yaml",
+      "bytes": 446,
+      "sha256": "76c96c10764960b49c3c428510dd5691c863c5fd1714cfecee0c5d4e5d45138f"
+    },
+    {
+      "path": "faster_rcnn/configs/trainer/gpu_fp16.yaml",
+      "bytes": 540,
+      "sha256": "e23ea0d1502baa9a411996beab7a4e26033cfd28491a4acb81d3f3fcd62158fc"
+    },
+    {
+      "path": "faster_rcnn/configs/trainer/gpu_fp32.yaml",
+      "bytes": 356,
+      "sha256": "6d2320e82a69a0d45fd99db0744988661bd11802f4c12136e3705f97292c8da8"
+    },
+    {
+      "path": "preds/predictions_val_exp01_baseline.json",
+      "bytes": 1436444,
+      "sha256": "4aa288c81a152dce504411cd86ca6794e7cbef6008662b562b8a10f3cdc1205d"
+    },
+    {
+      "path": "preds/predictions_val_exp02_small_anchor.json",
+      "bytes": 716592,
+      "sha256": "254667e0a838c0d5d4b05c857e081a2ad6428d2ba2ead6fd0916513115f26670"
+    },
+    {
+      "path": "preds/predictions_val_exp03_fpn_aug.json",
+      "bytes": 844478,
+      "sha256": "ca20b956cc19090a2b382f04c440027febe23b5fd12311ef2defd21ff58204c1"
+    },
+    {
+      "path": "preds/yolov8s_1280_val.json",
+      "bytes": 641985,
+      "sha256": "b67b1a6e2f1f5a65821936dee5520a3ef798abb44192523e25e4236574829f1c"
+    },
+    {
+      "path": "preds/yolov8s_640_sahi_val.json",
+      "bytes": 1629402,
+      "sha256": "ef18229351724063fe6206d385e8971f993262913f35767b93119c210a2ec094"
+    },
+    {
+      "path": "preds/yolov8s_640_val.json",
+      "bytes": 748795,
+      "sha256": "8448eb5f1a0bdb1e256d4eec0fa502ef9f562ab298be00f380cc9bbf2616bc30"
+    },
+    {
+      "path": "preds/yolov8s_tiled_640_sahi_val.json",
+      "bytes": 1806118,
+      "sha256": "9690ab9ef5640bc3f8acdec01a20586a0f29a9b0d206f1a71ef01dd847b64c95"
+    },
+    {
+      "path": "reports/eval/exp01_baseline.json",
+      "bytes": 1357,
+      "sha256": "879ca1075598db0b01d2b3afb223f94dc9e0b29bf63a78f898b582c9d6f67350"
+    },
+    {
+      "path": "reports/eval/exp02_fpn_small_anchor.json",
+      "bytes": 1363,
+      "sha256": "f778e39b15a913498d43471978c82438b80beaac82b9b32665b5c4cc704423cd"
+    },
+    {
+      "path": "reports/eval/exp03_fpn_aug.json",
+      "bytes": 1357,
+      "sha256": "95e3985671e58b530fc81c09989d3c1ea2908a09735251e7a25471fc30c5f7fa"
+    },
+    {
+      "path": "reports/eval/fasterrcnn_baseline_check.json",
+      "bytes": 1372,
+      "sha256": "6ca7862229e12a8403d3c7762f2af7f4eddeeedc8e41a4f51be1d623857ff4bc"
+    },
+    {
+      "path": "reports/eval/imb_clspw.json",
+      "bytes": 1348,
+      "sha256": "ff60a8b291cbf04e64a1b161e83275a92427a02614468ef39e052c28fba3709f"
+    },
+    {
+      "path": "reports/eval/imb_rfs.json",
+      "bytes": 1350,
+      "sha256": "a4cbaf6e473670d9dc690a5441f437ae9442c27835d3e5401261fac82f6c4d8a"
+    },
+    {
+      "path": "reports/eval/results.md",
+      "bytes": 680,
+      "sha256": "4a51a1042c03f0a4e2ae52dd7b98a65ae43e69f62c65a1243b149afcb59e7724"
+    },
+    {
+      "path": "reports/eval/yolov8s_1280.json",
+      "bytes": 1351,
+      "sha256": "3e3cdd01593b1e6da221c2fff37b34d35170d1e2741523f8d04fd300a43a7d1d"
+    },
+    {
+      "path": "reports/eval/yolov8s_640.json",
+      "bytes": 1364,
+      "sha256": "bf532d5f4fd95ed57f822d01ed806f56d2816f78693f982d81f7e3e9f9993d84"
+    },
+    {
+      "path": "reports/eval/yolov8s_640_sahi.json",
+      "bytes": 1360,
+      "sha256": "722e8188835efd85592b5adaf7a7e3ddc60c86f619c378d4b52c1a6027102063"
+    },
+    {
+      "path": "reports/eval/yolov8s_tiled_640_sahi.json",
+      "bytes": 1366,
+      "sha256": "167a674fcd40b108ef01bcb72a4e82661e0146b65656f68aea43cfeca328bcc8"
+    }
+  ]
+}

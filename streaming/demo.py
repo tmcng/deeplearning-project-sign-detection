@@ -172,6 +172,9 @@ def main(argv=None):
         predict, extra = load_detector(args, torch)
         meta.update(extra)
         network = args.source.lower().startswith(('rtsp://', 'http://', 'https://'))
+        if network and args.source.lower().startswith('rtsp://'):
+            import os
+            os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;tcp'
         cap = cv2.VideoCapture(args.source, cv2.CAP_FFMPEG,
                                [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, args.read_timeout_ms,
                                 cv2.CAP_PROP_READ_TIMEOUT_MSEC, args.read_timeout_ms]) if network else cv2.VideoCapture(args.source)

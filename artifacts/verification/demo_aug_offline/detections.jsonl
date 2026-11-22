@@ -1,0 +1,32 @@
+{"frame": 0, "warmup": true, "detections": [{"box": [1203.16845703125, 505.677978515625, 1213.834716796875, 517.4951171875], "score": 0.5861654281616211, "class_id": 6, "label": "Nguy hiểm", "track_id": 1}, {"box": [695.2205810546875, 485.4518737792969, 702.3018188476562, 491.9449157714844], "score": 0.44765177369117737, "class_id": 6, "label": "Nguy hiểm", "track_id": 2}]}
+{"frame": 1, "warmup": true, "detections": [{"box": [693.80517578125, 482.8586730957031, 701.025634765625, 489.56317138671875], "score": 0.5089758634567261, "class_id": 6, "label": "Nguy hiểm", "track_id": 2}, {"box": [1199.6995849609375, 504.43829345703125, 1209.6312255859375, 516.5093994140625], "score": 0.37466832995414734, "class_id": 6, "label": "Nguy hiểm", "track_id": 1}]}
+{"frame": 2, "warmup": false, "detections": []}
+{"frame": 3, "warmup": false, "detections": [{"box": [683.719970703125, 466.4317321777344, 691.9803466796875, 474.7875061035156], "score": 0.8936960101127625, "class_id": 6, "label": "Nguy hiểm", "track_id": 3}, {"box": [682.5169067382812, 462.2942810058594, 692.3173828125, 473.5923156738281], "score": 0.8437161445617676, "class_id": 6, "label": "Nguy hiểm", "track_id": 4}, {"box": [684.132568359375, 469.7804260253906, 691.4862670898438, 476.82135009765625], "score": 0.7671529650688171, "class_id": 6, "label": "Nguy hiểm", "track_id": 5}, {"box": [683.8359375, 460.80767822265625, 692.2381591796875, 468.9745788574219], "score": 0.6706767082214355, "class_id": 6, "label": "Nguy hiểm", "track_id": 6}, {"box": [683.1328125, 485.39739990234375, 690.8447875976562, 493.3114013671875], "score": 0.398635596036911, "class_id": 6, "label": "Nguy hiểm", "track_id": 7}]}
+{"frame": 4, "warmup": false, "detections": [{"box": [671.5950927734375, 461.1057434082031, 678.4231567382812, 468.57171630859375], "score": 0.5936485528945923, "class_id": 5, "label": "Cấm còn lại", "track_id": 8}, {"box": [671.422119140625, 464.32977294921875, 678.3217163085938, 471.7304992675781], "score": 0.5591912865638733, "class_id": 5, "label": "Cấm còn lại", "track_id": 9}, {"box": [671.0634155273438, 468.7049865722656, 678.0861206054688, 475.17547607421875], "score": 0.35395559668540955, "class_id": 5, "label": "Cấm còn lại", "track_id": 10}, {"box": [670.0082397460938, 474.6214904785156, 677.8713989257812, 482.59417724609375], "score": 0.34024953842163086, "class_id": 5, "label": "Cấm còn lại", "track_id": 11}]}
+{"frame": 5, "warmup": false, "detections": [{"box": [635.90771484375, 516.939208984375, 647.0025634765625, 526.4153442382812], "score": 0.3735029101371765, "class_id": 6, "label": "Nguy hiểm", "track_id": 12}, {"box": [634.2987060546875, 516.3877563476562, 658.6740112304688, 540.9387817382812], "score": 0.3453707695007324, "class_id": 6, "label": "Nguy hiểm", "track_id": 13}]}
+{"frame": 6, "warmup": false, "detections": [{"box": [1211.23828125, 504.94805908203125, 1221.9012451171875, 516.340087890625], "score": 0.9135456085205078, "class_id": 6, "label": "Nguy hiểm", "track_id": 14}, {"box": [616.7918701171875, 478.79840087890625, 628.161865234375, 489.28759765625], "score": 0.8970345854759216, "class_id": 6, "label": "Nguy hiểm", "track_id": 15}, {"box": [1161.391357421875, 508.1332702636719, 1170.051513671875, 515.9537963867188], "score": 0.8770555257797241, "class_id": 6, "label": "Nguy hiểm", "track_id": 16}, {"box": [617.5057373046875, 446.70611572265625, 629.9857177734375, 461.41741943359375], "score": 0.4748572111129761, "class_id": 6, "label": "Nguy hiểm", "track_id": 17}]}
+{"frame": 7, "warmup": false, "detections": [{"box": [1158.9556884765625, 510.1651306152344, 1167.3270263671875, 517.8818359375], "score": 0.8411908149719238, "class_id": 6, "label": "Nguy hiểm", "track_id": 16}, {"box": [1257.856689453125, 507.8820495605469, 1270.006103515625, 520.7871704101562], "score": 0.7330003380775452, "class_id": 6, "label": "Nguy hiểm", "track_id": 18}, {"box": [1203.2003173828125, 510.31640625, 1211.5435791015625, 518.5028686523438], "score": 0.7062287330627441, "class_id": 6, "label": "Nguy hiểm", "track_id": 19}]}
+{"frame": 8, "warmup": false, "detections": []}
+{"frame": 9, "warmup": false, "detections": []}
+{"frame": 10, "warmup": false, "detections": []}
+{"frame": 11, "warmup": false, "detections": []}
+{"frame": 12, "warmup": false, "detections": []}
+{"frame": 13, "warmup": false, "detections": []}
+{"frame": 14, "warmup": false, "detections": []}
+{"frame": 15, "warmup": false, "detections": [{"box": [474.8787536621094, 490.045166015625, 481.6668395996094, 496.4332580566406], "score": 0.810992419719696, "class_id": 1, "label": "Cấm ngược chiều", "track_id": 20}]}
+{"frame": 16, "warmup": false, "detections": []}
+{"frame": 17, "warmup": false, "detections": []}
+{"frame": 18, "warmup": false, "detections": []}
+{"frame": 19, "warmup": false, "detections": []}
+{"frame": 20, "warmup": false, "detections": []}
+{"frame": 21, "warmup": false, "detections": []}
+{"frame": 22, "warmup": false, "detections": []}
+{"frame": 23, "warmup": false, "detections": []}
+{"frame": 24, "warmup": false, "detections": []}
+{"frame": 25, "warmup": false, "detections": []}
+{"frame": 26, "warmup": false, "detections": []}
+{"frame": 27, "warmup": false, "detections": []}
+{"frame": 28, "warmup": false, "detections": []}
+{"frame": 29, "warmup": false, "detections": []}
+{"frame": 30, "warmup": false, "detections": []}
+{"frame": 31, "warmup": false, "detections": [{"box": [836.39453125, 493.4587707519531, 844.9826049804688, 501.125244140625], "score": 0.8380638957023621, "class_id": 6, "label": "Nguy hiểm", "track_id": 21}]}

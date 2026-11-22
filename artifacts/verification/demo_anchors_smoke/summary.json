@@ -1,0 +1,141 @@
+{
+  "started_utc": "2026-11-22T15:37:33.177003+00:00",
+  "command": [
+    "D:\\MySC\\Python\\deeplearning-project-sign-detection\\streaming\\demo.py",
+    "--model",
+    "faster-rcnn",
+    "--weights",
+    "faster_rcnn/checkpoints/fasterrcnn_fpn_small_anchor_best.zip",
+    "--config",
+    "faster_rcnn/configs/experiment/exp02_fpn_small_anchor.yaml",
+    "--source",
+    "data/DashCam/traffic.mp4",
+    "--device",
+    "cpu",
+    "--max-frames",
+    "12",
+    "--warmup",
+    "2",
+    "--output-dir",
+    "artifacts/verification/demo_anchors_smoke",
+    "--save-video",
+    "--track",
+    "--headless"
+  ],
+  "arguments": {
+    "model": "faster-rcnn",
+    "weights": "faster_rcnn\\checkpoints\\fasterrcnn_fpn_small_anchor_best.zip",
+    "config": "faster_rcnn\\configs\\experiment\\exp02_fpn_small_anchor.yaml",
+    "source": "data/DashCam/traffic.mp4",
+    "device": "cpu",
+    "imgsz": 1280,
+    "conf": 0.3,
+    "max_frames": 12,
+    "warmup": 2,
+    "output_dir": "artifacts\\verification\\demo_anchors_smoke",
+    "headless": true,
+    "save_video": true,
+    "track": true,
+    "read_timeout_ms": 5000,
+    "threads": 4
+  },
+  "weights_sha256": "4422b0b41a0fea3588d170b17fc0c33632ba0b18c76f75467e41723d48d9fbca",
+  "python": "3.12.9 (tags/v3.12.9:fdb8142, Feb  4 2025, 15:27:58) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+  "torch": "2.15.0+cpu",
+  "torchvision": "0.29.2+cpu",
+  "opencv": "5.0.0",
+  "device": "cpu",
+  "threads": 4,
+  "gpu": null,
+  "precision": "float32",
+  "batch_size": 1,
+  "timing_contract": "infer_ms: adapter preprocessing, transfer, inference, postprocessing, CPU results; pipeline_ms: capture through draw, optional encode/display and detection log, excludes CSV write; startup and warmup excluded. Sequential capture, no latest-frame dropping; no glass-to-glass latency claim.",
+  "git_revision": "9b804c28cbb418c81db731310fa57917299a2908",
+  "git_dirty": true,
+  "implementation_sha256": "866aa363f8b0497afdae8d13de448e9ef70fb09f97d271c7854c060a233a783c",
+  "source_sha256": "f9779a208edeae587ae0779ed6f602735934a458415ee8c5eaac1e5ad0768ae2",
+  "experiment": "exp02_fpn_small_anchor",
+  "model_config": {
+    "architecture": "fasterrcnn_resnet50_fpn",
+    "pretrained_weights": "COCO_V1",
+    "backbone": {
+      "name": "resnet50",
+      "trainable_layers": 3
+    },
+    "rpn": {
+      "anchor_sizes": [
+        [
+          8
+        ],
+        [
+          16
+        ],
+        [
+          32
+        ],
+        [
+          64
+        ],
+        [
+          128
+        ]
+      ],
+      "aspect_ratios": [
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ]
+      ]
+    },
+    "transform": {
+      "min_size": 800,
+      "max_size": 1800
+    }
+  },
+  "class_id_convention": "COCO category indices 1..7 (0 background)",
+  "config_sha256": "91ae761474e9c38a205ca9ab622f8a94407246b663d8ec54ce245af004234e12",
+  "source_fps": 30.0,
+  "source_dimensions": [
+    1280,
+    720
+  ],
+  "status": "completed",
+  "error": null,
+  "frames": 12,
+  "measured_frames": 10,
+  "infer_fps": 0.21617898575389868,
+  "infer_latency_ms": {
+    "mean": 4625.7965200114995,
+    "p50": 4605.710300093051,
+    "p95": 4859.898649971001
+  },
+  "pipeline_fps": 0.21576091031144237,
+  "pipeline_latency_ms": {
+    "mean": 4634.759830019902,
+    "p50": 4614.491000014823,
+    "p95": 4868.421395000769
+  }
+}

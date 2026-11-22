@@ -1,5 +1,29 @@
 [
   {
+    "path": "artifacts\\verification\\demo_baseline_smoke",
+    "status": "PASS",
+    "frames": 12,
+    "measured": 10,
+    "decoded_video_frames": 12,
+    "recomputed_fps": {
+      "infer": 0.23079043401945087,
+      "pipeline": 0.23028318215307475
+    },
+    "detections": 19
+  },
+  {
+    "path": "artifacts\\verification\\demo_anchors_smoke",
+    "status": "PASS",
+    "frames": 12,
+    "measured": 10,
+    "decoded_video_frames": 12,
+    "recomputed_fps": {
+      "infer": 0.21617898575389868,
+      "pipeline": 0.21576091031144237
+    },
+    "detections": 25
+  },
+  {
     "path": "artifacts\\verification\\demo_aug_smoke",
     "status": "PASS",
     "frames": 12,
@@ -10,5 +34,29 @@
       "pipeline": 0.20844602750546856
     },
     "detections": 23
+  },
+  {
+    "path": "artifacts\\verification\\demo_aug_offline",
+    "status": "PASS",
+    "frames": 32,
+    "measured": 30,
+    "decoded_video_frames": 32,
+    "recomputed_fps": {
+      "infer": 0.24593436514480524,
+      "pipeline": 0.24533216968691565
+    },
+    "detections": 24
+  },
+  {
+    "path": "artifacts\\verification\\demo_rtsp_smoke",
+    "status": "PASS",
+    "frames": 5,
+    "measured": 4,
+    "decoded_video_frames": 5,
+    "recomputed_fps": {
+      "infer": 0.21362811392587586,
+      "pipeline": 0.21319399769762754
+    },
+    "detections": 0
   }
 ]
