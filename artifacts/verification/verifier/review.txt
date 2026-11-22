@@ -1,4 +1,4 @@
-﻿Independent review of demo_aug_smoke
+Independent review of demo_aug_smoke
 - Actual verifier command: .venv/Scripts/python.exe artifacts/verification/verifier/verify_run.py artifacts/verification/demo_aug_smoke
 - Exit code 0. FPS recomputed from measured CSV rows; no model inference was run by verifier.
 - 12 JSONL records, 12 CSV records, 12 decoded MP4 frames, 10 measured after 2 warmup.
