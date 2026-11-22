@@ -1,0 +1,65 @@
+[
+  {
+    "path": "faster_rcnn\\checkpoints\\fasterrcnn_baseline_best1.zip",
+    "type": "OrderedDict",
+    "tensor_count": 295,
+    "all_tensors": true,
+    "classifier_shape": [
+      8,
+      1024
+    ],
+    "batchnorm_counter_keys": 0,
+    "head_keys": [
+      "roi_heads.box_head.fc6.weight",
+      "roi_heads.box_head.fc6.bias",
+      "roi_heads.box_head.fc7.weight",
+      "roi_heads.box_head.fc7.bias",
+      "roi_heads.box_predictor.cls_score.weight",
+      "roi_heads.box_predictor.cls_score.bias",
+      "roi_heads.box_predictor.bbox_pred.weight",
+      "roi_heads.box_predictor.bbox_pred.bias"
+    ]
+  },
+  {
+    "path": "faster_rcnn\\checkpoints\\fasterrcnn_fpn_aug_best.zip",
+    "type": "OrderedDict",
+    "tensor_count": 295,
+    "all_tensors": true,
+    "classifier_shape": [
+      8,
+      1024
+    ],
+    "batchnorm_counter_keys": 0,
+    "head_keys": [
+      "roi_heads.box_head.fc6.weight",
+      "roi_heads.box_head.fc6.bias",
+      "roi_heads.box_head.fc7.weight",
+      "roi_heads.box_head.fc7.bias",
+      "roi_heads.box_predictor.cls_score.weight",
+      "roi_heads.box_predictor.cls_score.bias",
+      "roi_heads.box_predictor.bbox_pred.weight",
+      "roi_heads.box_predictor.bbox_pred.bias"
+    ]
+  },
+  {
+    "path": "faster_rcnn\\checkpoints\\fasterrcnn_fpn_small_anchor_best.zip",
+    "type": "OrderedDict",
+    "tensor_count": 295,
+    "all_tensors": true,
+    "classifier_shape": [
+      8,
+      1024
+    ],
+    "batchnorm_counter_keys": 0,
+    "head_keys": [
+      "roi_heads.box_head.fc6.weight",
+      "roi_heads.box_head.fc6.bias",
+      "roi_heads.box_head.fc7.weight",
+      "roi_heads.box_head.fc7.bias",
+      "roi_heads.box_predictor.cls_score.weight",
+      "roi_heads.box_predictor.cls_score.bias",
+      "roi_heads.box_predictor.bbox_pred.weight",
+      "roi_heads.box_predictor.bbox_pred.bias"
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "path": "artifacts\\verification\\demo_aug_smoke",
+    "status": "PASS",
+    "frames": 12,
+    "measured": 10,
+    "decoded_video_frames": 12,
+    "recomputed_fps": {
+      "infer": 0.2088783090258244,
+      "pipeline": 0.20844602750546856
+    },
+    "detections": 23
+  }
+]

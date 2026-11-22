@@ -1,0 +1,13 @@
+﻿
+Name                                 NumberOfCores NumberOfLogicalProcessors
+----                                 ------------- -------------------------
+13th Gen Intel(R) Core(TM) i5-13420H             8                        12
+
+
+
+Name                                   DriverVersion
+----                                   -------------
+Intel(R) UHD Graphics                  32.0.101.5768
+NVIDIA GeForce RTX 3050 4GB Laptop GPU 32.0.16.1742 
+
+
