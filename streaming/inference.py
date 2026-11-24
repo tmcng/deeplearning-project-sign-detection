@@ -56,8 +56,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                    help="Enable PyTorch 2.x JIT graph compilation (torch.compile)")
     p.add_argument("--roi", nargs=4, type=float, metavar=("X1", "Y1", "X2", "Y2"),
                    help="Normalized ROI coordinates [0.0 - 1.0]: x1 y1 x2 y2")
-    p.add_argument("--roi-preset", choices=["none", "right", "hood-cut"], default="none",
-                   help="Preset ROI: 'right' (x:0.35->1.0, y:0.0->0.75), 'hood-cut' (x:0.0->1.0, y:0.0->0.75)")
+    p.add_argument("--roi-preset", choices=["none", "right", "hood-cut"], default="right",
+                   help="Preset ROI: 'right' (x:0.35->1.0, y:0.0->0.75), 'hood-cut' (x:0.0->1.0, y:0.0->0.75). Default: 'right'")
     return p
 
 
