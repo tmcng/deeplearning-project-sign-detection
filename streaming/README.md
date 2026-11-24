@@ -40,11 +40,67 @@ demo inference trên RTSP, chưa chứng minh đáp ứng thời gian thực ho�
 camera tới màn hình. Mất luồng sẽ dừng với trạng thái lỗi có log; không phát lại
 frame cũ. Không có tự reconnect trong phiên bản này.
 
-## Benchmark và ablation
+## Tối ưu hóa Demo trên Laptop RTX 3050 & Môi trường GPU
 
-Đo từ cùng video cục bộ để tránh nhầm giới hạn tốc độ nguồn RTSP với khả năng
-xử lý. Chạy từng cấu hình tuần tự, cùng thiết bị, threads, đoạn video, confidence,
-warmup và tùy chọn draw/track/save. Không chạy benchmark đồng thời.
+Module `streaming` đã được tái cấu trúc theo chuẩn Clean Architecture (Design Pattern: Strategy, Factory, Pipeline, Decoupled Metrics & Visualizer). Hỗ trợ linh hoạt các backend: **PyTorch (FP16/AMP)**, **YOLO (PyTorch/ONNX/TensorRT Engine)**, và **ONNX Runtime (DirectML / CUDA / TensorRT Providers)**.
+
+### 1. Chạy trên GPU NVIDIA RTX 3050 Laptop (Khuyên dùng cho buổi Demo)
+
+Để đạt tốc độ tối đa trên laptop cá nhân (card RTX 3050), sử dụng kết hợp tính năng **FP16 AMP** và **ROI Presets**:
+
+```powershell
+python -m streaming.demo `
+  --model faster-rcnn `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
+  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --source data/DashCam/traffic.mp4 `
+  --device cuda:0 `
+  --fp16 `
+  --roi-preset right `
+  --track `
+  --save-video `
+  --output-dir demo_rtx3050_run
+```
+
+* `--fp16`: Kích hoạt nhân Tensor Cores trên RTX 3050 (tăng tốc độ gấp đôi).
+* `--roi-preset right`: Tối ưu theo vị trí biển báo bên phải đường tại Việt Nam (`x: 0.35 -> 1.0, y: 0.0 -> 0.75`).
+* `--roi-preset hood-cut`: Giữ trọn chiều ngang, chỉ loại bỏ nắp ca-pô (`y: 0.0 -> 0.75`).
+* Bỏ cờ `--headless` để hiển thị cửa sổ trực quan (`cv2.imshow`) trong buổi bảo vệ / demo.
+
+### 2. Xuất mô hình sang ONNX & Chạy qua ONNX Runtime
+
+Để xuất checkpoint Faster R-CNN sang định dạng ONNX chuẩn:
+```powershell
+python -m streaming.export_onnx `
+  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
+  --output faster_rcnn/checkpoints/fasterrcnn_fpn_aug.onnx
+```
+
+Chạy demo với backend ONNX Runtime (hỗ trợ DirectML / CUDA / TensorRT trên Windows):
+```powershell
+python -m streaming.demo `
+  --model onnx `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug.onnx `
+  --source data/DashCam/traffic.mp4 `
+  --device cuda:0 `
+  --track `
+  --output-dir demo_onnx_run
+```
+
+### 3. Cấu trúc mã nguồn Clean Architecture
+
+* `streaming/config.py`: Định nghĩa cấu hình kiểu mạnh (`PipelineConfig`, `Detection`, `FrameMetrics`).
+* `streaming/backends/`: Strategy Pattern cho các backend suy luận:
+  * `pytorch_frcnn.py`: Faster R-CNN PyTorch (hỗ trợ FP16 AMP, `torch.compile`, freeze BN).
+  * `yolo_backend.py`: Wrapper cho YOLOv8 (`.pt`, `.onnx`, TensorRT `.engine`).
+  * `onnx_backend.py`: ONNX Runtime (DirectML cho Windows RTX 3050, CUDA, TensorRT).
+  * `factory.py`: Factory method khởi tạo detector.
+* `streaming/pipeline.py`: Pipeline điều phối hoàn chỉnh (Capture ➔ ROI Crop ➔ Predict ➔ Track ➔ Render ➔ Log).
+* `streaming/visualizer.py`: Vẽ Bounding Box, Tracking ID, HUD telemetry và khung ROI.
+* `streaming/metrics.py`: Đo đạc độ trễ từng frame, tính toán thống kê p50/p95, ghi log CSV/JSONL/summary.
+* `streaming/tracker.py`: Greedy Class-aware IoU Tracker.
+* `streaming/demo.py`: CLI Entrypoint tinh gọn.
 
 | Cấu hình | Checkpoint trong `faster_rcnn/checkpoints` | YAML trong `faster_rcnn/configs/experiment` |
 | --- | --- | --- |
