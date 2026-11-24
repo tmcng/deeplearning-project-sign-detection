@@ -88,3 +88,21 @@ python faster_rcnn/train.py -c faster_rcnn/configs/experiment/exp01_baseline.yam
 # Test luồng evaluate 1 batch
 python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp01_baseline.yaml --dry-run
 ```
+
+### Chế độ C: Inference & Evaluate đầy đủ trên tập Test (Local / Server)
+Khi bạn đã giải nén ảnh tập test vào `data/images/` và annotation tại `data/splits/test.json`:
+
+```powershell
+# Chạy inference và chấm điểm tập test cho thí nghiệm EXP03 (tự động nhận checkpoint .zip hoặc .pth)
+python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --split test
+
+# Hoặc chỉ định rõ file weights và đường dẫn file predictions xuất ra:
+python faster_rcnn/evaluate.py `
+  -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --split test `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
+  --out-pred preds/predictions_test_exp03_fpn_aug.json
+```
+* **Kết quả sinh ra:**
+  * File dự đoán test: `preds/predictions_test_exp03_fpn_aug.json`
+  * Báo cáo đánh giá: `reports/eval/exp03_fpn_aug.json` và cập nhật vào `reports/eval/results.md`.

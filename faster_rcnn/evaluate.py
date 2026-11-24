@@ -260,14 +260,20 @@ def main():
     elif os.path.isfile(cfg["MODEL_BEST_WEIGHTS"]):
         weights_path = cfg["MODEL_BEST_WEIGHTS"]
         print(f"[WEIGHTS] Best checkpoint: {weights_path}")
+    elif os.path.isfile(cfg["MODEL_BEST_WEIGHTS"].replace(".pth", ".zip")):
+        weights_path = cfg["MODEL_BEST_WEIGHTS"].replace(".pth", ".zip")
+        print(f"[WEIGHTS] Best checkpoint (.zip): {weights_path}")
     elif os.path.isfile(cfg["MODEL_WEIGHTS"]):
         weights_path = cfg["MODEL_WEIGHTS"]
         print(f"[WEIGHTS] Last checkpoint: {weights_path}")
+    elif os.path.isfile(cfg["MODEL_WEIGHTS"].replace(".pth", ".zip")):
+        weights_path = cfg["MODEL_WEIGHTS"].replace(".pth", ".zip")
+        print(f"[WEIGHTS] Last checkpoint (.zip): {weights_path}")
     else:
         raise FileNotFoundError(
             f"Không tìm thấy checkpoint:\n"
-            f"  best: {cfg['MODEL_BEST_WEIGHTS']}\n"
-            f"  last: {cfg['MODEL_WEIGHTS']}\n"
+            f"  best: {cfg['MODEL_BEST_WEIGHTS']} (hoặc .zip)\n"
+            f"  last: {cfg['MODEL_WEIGHTS']} (hoặc .zip)\n"
             f"Hãy chạy train.py trước."
         )
 
@@ -295,7 +301,12 @@ def main():
 
     # 2. Inference & lưu predictions JSON
     preds = predict(model, loader, device, conf_thresh=conf_thresh, dry_run=is_dry_run)
-    pred_path = args.out_pred or cfg["OUTPUT_PRED_JSON"]
+    if args.out_pred:
+        pred_path = args.out_pred
+    else:
+        pred_path = cfg["OUTPUT_PRED_JSON"]
+        if args.split == "test" and "_val_" in pred_path:
+            pred_path = pred_path.replace("_val_", "_test_")
     os.makedirs(os.path.dirname(pred_path), exist_ok=True)
     with open(pred_path, "w", encoding="utf-8") as f:
         json.dump(preds, f, indent=2)
