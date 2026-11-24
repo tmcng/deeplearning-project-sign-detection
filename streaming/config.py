@@ -57,7 +57,7 @@ class PipelineConfig:
     config_path: Optional[Path] = None
     source: str = "rtsp://localhost:8554/live/traffic"
     device: str = "cpu"
-    conf_threshold: float = 0.3
+    conf_threshold: float = 0.5
     max_frames: int = 300
     warmup_frames: int = 10
     headless: bool = False

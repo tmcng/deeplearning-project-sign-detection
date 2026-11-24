@@ -32,7 +32,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
                    help="Execution device: 'cpu' or 'cuda:0'")
     p.add_argument("--imgsz", type=int, default=1280,
                    help="Image input size for YOLO models")
-    p.add_argument("--conf", type=float, default=0.3,
+    p.add_argument("--conf", type=float, default=0.5,
                    help="Confidence score threshold")
     p.add_argument("--max-frames", type=int, default=300,
                    help="Maximum frames to process (including warmup)")
