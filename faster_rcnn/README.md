@@ -89,20 +89,35 @@ python faster_rcnn/train.py -c faster_rcnn/configs/experiment/exp01_baseline.yam
 python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp01_baseline.yaml --dry-run
 ```
 
-### Chế độ C: Inference & Evaluate đầy đủ trên tập Test (Local / Server)
-Khi bạn đã giải nén ảnh tập test vào `data/images/` và annotation tại `data/splits/test.json`:
+### Chế độ C: Inference & Evaluate đầy đủ (Tập VAL hoặc TEST)
 
+Hệ thống tự động phân biệt dữ liệu và file annotation thông qua cờ `--split` (toàn bộ ảnh để chung trong `data/images/`, loader sẽ mở đúng file JSON trong `data/splits/` để lọc đúng danh sách ảnh cần chạy):
+
+| Cờ `--split` | File Annotation đọc vào | Hành vi xử lý | File dự đoán xuất ra |
+| :---: | :--- | :--- | :--- |
+| **`--split val`** *(Mặc định)* | `data/splits/val.json` | Tính `val/loss` $\rightarrow$ Inference $\rightarrow$ Chấm mAP | `preds/predictions_val_<tên_exp>.json` |
+| **`--split test`** | `data/splits/test.json` | Bỏ qua tính loss $\rightarrow$ Inference $\rightarrow$ Chấm mAP | `preds/predictions_test_<tên_exp>.json` |
+
+#### 1. Lệnh chạy cho tập Validation (`val`):
 ```powershell
-# Chạy inference và chấm điểm tập test cho thí nghiệm EXP03 (tự động nhận checkpoint .zip hoặc .pth)
+# Chạy đánh giá tập val (tính val loss và mAP)
+python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --split val
+```
+
+#### 2. Lệnh chạy cho tập Test (`test`):
+```powershell
+# Chạy đánh giá tập test (tự động bỏ qua tính loss, chỉ inference và chấm điểm mAP)
 python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --split test
 
-# Hoặc chỉ định rõ file weights và đường dẫn file predictions xuất ra:
+# Hoặc tùy biến chỉ định trực tiếp file weights và file predictions:
 python faster_rcnn/evaluate.py `
   -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
   --split test `
   --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
   --out-pred preds/predictions_test_exp03_fpn_aug.json
 ```
+
 * **Kết quả sinh ra:**
-  * File dự đoán test: `preds/predictions_test_exp03_fpn_aug.json`
-  * Báo cáo đánh giá: `reports/eval/exp03_fpn_aug.json` và cập nhật vào `reports/eval/results.md`.
+  * File dự đoán: `preds/predictions_test_<tên_exp>.json` (hoặc `predictions_val_*.json`).
+  * Báo cáo đánh giá JSON: `reports/eval/<tên_exp>.json`.
+  * Tự động cập nhật bảng điểm so sánh vào: `reports/eval/results.md`.
