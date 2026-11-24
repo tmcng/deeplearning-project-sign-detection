@@ -28,6 +28,12 @@ def parser():
     p.add_argument('--track', action='store_true', help='Simple class-aware IoU association, not DeepSORT')
     p.add_argument('--read-timeout-ms', type=int, default=5000)
     p.add_argument('--threads', type=int, default=4, help='Torch CPU threads')
+    p.add_argument('--fp16', action='store_true', help='Use FP16 Automatic Mixed Precision on CUDA')
+    p.add_argument('--compile', action='store_true', help='Use torch.compile() for JIT graph optimization')
+    p.add_argument('--roi', nargs=4, type=float, metavar=('X1', 'Y1', 'X2', 'Y2'),
+                   help='Normalized ROI crop: x1 y1 x2 y2 in [0, 1]. E.g. --roi 0.35 0.0 1.0 0.75')
+    p.add_argument('--roi-preset', choices=['none', 'right', 'hood-cut'], default='none',
+                   help='ROI preset: right (x:0.35->1.0, y:0.0->0.75), hood-cut (x:0.0->1.0, y:0.0->0.75)')
     return p
 
 
@@ -109,12 +115,18 @@ def load_detector(args, torch):
         freeze_bn(model.backbone)
     state = torch.load(args.weights, map_location='cpu', weights_only=True)
     model.load_state_dict(state, strict=True)
+    if args.compile and hasattr(torch, 'compile'):
+        model = torch.compile(model)
     model.to(args.device).eval()
     names = cfg['CLASS_NAMES']
     def predict(frame):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         tensor = torch.from_numpy(rgb).permute(2, 0, 1).to(args.device, dtype=torch.float32) / 255
-        pred = model([tensor])[0]
+        if args.fp16 and str(args.device) != 'cpu':
+            with torch.cuda.amp.autocast(dtype=torch.float16):
+                pred = model([tensor])[0]
+        else:
+            pred = model([tensor])[0]
         return [dict(box=b, score=s, class_id=int(c), label=names[int(c)])
                 for b, s, c in zip(pred['boxes'].cpu().tolist(), pred['scores'].cpu().tolist(),
                                    pred['labels'].cpu().tolist()) if s >= args.conf]
@@ -154,7 +166,7 @@ def main(argv=None):
             'processor': platform.processor(), 'torch': torch.__version__, 'torchvision': torchvision.__version__,
             'opencv': cv2.__version__, 'device': str(device), 'threads': args.threads,
             'gpu': torch.cuda.get_device_name(device) if device.type == 'cuda' else None,
-            'precision': 'float32', 'batch_size': 1,
+            'precision': 'float16' if args.fp16 else 'float32', 'batch_size': 1,
             'timing_contract': 'infer_ms: adapter preprocessing, transfer, inference, postprocessing, CPU results; pipeline_ms: capture through draw, optional encode/display and detection log, excludes CSV write; startup and warmup excluded. Sequential capture, no latest-frame dropping; no glass-to-glass latency claim.'}
     try:
         meta['git_revision'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
@@ -182,6 +194,14 @@ def main(argv=None):
             raise RuntimeError('Cannot open source')
         fps = cap.get(cv2.CAP_PROP_FPS)
         meta['source_fps'] = fps if np.isfinite(fps) else None
+        roi = None
+        if args.roi:
+            roi = args.roi
+        elif args.roi_preset == 'right':
+            roi = [0.35, 0.0, 1.0, 0.75]
+        elif args.roi_preset == 'hood-cut':
+            roi = [0.0, 0.0, 1.0, 0.75]
+        meta['roi'] = roi
         tracker = IoUTracker() if args.track else None
         with (args.output_dir/'detections.jsonl').open('w', encoding='utf-8') as log, \
                 (args.output_dir/'timings.csv').open('w', newline='', encoding='utf-8') as timing:
@@ -198,21 +218,35 @@ def main(argv=None):
                             raise RuntimeError('Stream read failed or timed out; stopping without stale frames')
                         status = 'eof'
                         break
+                    if roi:
+                        H, W = frame.shape[:2]
+                        rx1, ry1, rx2, ry2 = int(roi[0]*W), int(roi[1]*H), int(roi[2]*W), int(roi[3]*H)
+                        crop_frame = frame[ry1:ry2, rx1:rx2]
+                    else:
+                        rx1, ry1 = 0, 0
+                        crop_frame = frame
                     sync()
                     infer_start = time.perf_counter()
-                    detections = predict(frame)
+                    detections = predict(crop_frame)
                     sync()
                     inferred = time.perf_counter()
                     infer_ms = 1000 * (inferred-infer_start)
+                    if roi:
+                        for d in detections:
+                            d['box'] = [d['box'][0]+rx1, d['box'][1]+ry1, d['box'][2]+rx1, d['box'][3]+ry1]
                     if tracker:
                         tracker.update(detections, frame_id)
+                    if roi:
+                        cv2.rectangle(frame, (rx1, ry1), (rx2, ry2), (255, 180, 0), 1)
+                        cv2.putText(frame, 'ROI scan area', (rx1 + 5, ry1 + 20), cv2.FONT_HERSHEY_SIMPLEX, .45, (255, 180, 0), 1)
                     for d in detections:
                         x1, y1, x2, y2 = map(round, d['box'])
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 0), 2)
                         # OpenCV's default font cannot display Vietnamese; IDs remain authoritative.
                         label = f"class {d['class_id']} {d['score']:.2f}" + (f" ID {d['track_id']}" if tracker else '')
                         cv2.putText(frame, label, (x1, max(15, y1-5)), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 220, 0), 1)
-                    cv2.putText(frame, f'{args.model} | inference {1000/infer_ms:.2f} FPS | frame {frame_id}',
+                    mode_str = f'{"FP16" if args.fp16 else "FP32"}{", ROI" if roi else ""}'
+                    cv2.putText(frame, f'{args.model} ({mode_str}) | inference {1000/infer_ms:.2f} FPS | frame {frame_id}',
                                 (15, 28), cv2.FONT_HERSHEY_SIMPLEX, .65, (0, 255, 255), 2)
                     if frame_id == 0:
                         meta['source_dimensions'] = [frame.shape[1], frame.shape[0]]
