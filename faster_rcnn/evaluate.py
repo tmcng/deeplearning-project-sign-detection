@@ -292,12 +292,15 @@ def main():
     )
     print(f"[DATASET] {args.split.upper()} — {len(dataset)} ảnh")
 
-    # 1. Validation Loss
-    loss_metrics = evaluate_loss(model, loader, device, dry_run=is_dry_run)
-    print(f"[VAL LOSS] {loss_metrics['val/loss']:.4f}")
-    for k, v in loss_metrics.items():
-        if k != "val/loss":
-            print(f"  {k}: {v:.4f}")
+    # 1. Validation Loss (chỉ tính khi đánh giá tập val)
+    if args.split == "val":
+        loss_metrics = evaluate_loss(model, loader, device, dry_run=is_dry_run)
+        print(f"[VAL LOSS] {loss_metrics['val/loss']:.4f}")
+        for k, v in loss_metrics.items():
+            if k != "val/loss":
+                print(f"  {k}: {v:.4f}")
+    else:
+        print("[TEST MODE] Bỏ qua bước tính loss, bắt đầu inference lấy predictions & chấm mAP.")
 
     # 2. Inference & lưu predictions JSON
     preds = predict(model, loader, device, conf_thresh=conf_thresh, dry_run=is_dry_run)
