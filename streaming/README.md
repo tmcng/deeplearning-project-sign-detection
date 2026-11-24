@@ -35,7 +35,9 @@ streaming/
 │   ├── pytorch_frcnn.py  # Faster R-CNN PyTorch (hỗ trợ CUDA, FP16 AMP, torch.compile)
 │   ├── yolo_backend.py   # YOLOv8 Backend (hỗ trợ .pt, .onnx, TensorRT .engine)
 │   └── onnx_backend.py   # ONNX Runtime (hỗ trợ TensorRT, CUDA, DirectML cho Windows RTX 3050)
-├── demo.py               # CLI Entrypoint mỏng, sạch, xử lý tham số dòng lệnh
+├── inference.py          # Production CLI Entrypoint (python -m streaming.inference)
+├── __main__.py           # Package-level executable (python -m streaming)
+├── demo.py               # Backward-compatibility wrapper (python -m streaming.demo)
 └── README.md             # Tài liệu đặc tả kỹ thuật
 ```
 
