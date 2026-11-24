@@ -1,1 +1,0 @@
-Saved 37 artifact hashes to artifacts\verification\report\source_manifest.json; status=source_snapshot_only_not_final_results_freeze

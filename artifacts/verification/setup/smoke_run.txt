@@ -1,8 +1,0 @@
-{
-  "status": "completed",
-  "error": null,
-  "frames": 12,
-  "measured_frames": 10,
-  "infer_fps": 0.2088783090258244,
-  "pipeline_fps": 0.20844602750546856
-}

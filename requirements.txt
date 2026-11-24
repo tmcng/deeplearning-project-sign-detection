@@ -1,42 +1,48 @@
-# Config system
-pyyaml
+# ==============================================================================
+# Traffic Sign Detection - Requirements Specification
+# ==============================================================================
 
 # Core Scientific Stack
-numpy
-matplotlib
-pillow
-pandas
-scipy
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pillow>=9.5.0
+pyyaml>=6.0
 
-# COCO Evaluation
-pycocotools
-torch
-torchvision
-ultralytics
-wandb
+# Deep Learning Frameworks
+# Note for GPU (NVIDIA CUDA):
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0
+torchvision>=0.15.0
 
-# Deep Learning
-# GPU: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-torch
-torchvision
+# YOLO Architecture & Deployment
+ultralytics>=8.0.0
 
-# Object Detection (Faster R-CNN)
-albumentations
-opencv-python
+# Model Export & Accelerated Inference (ONNX / TensorRT / DirectML)
+onnx>=1.14.0
+# For Windows Laptop (RTX 3050 / DirectX 12): pip install onnxruntime-directml
+# For Linux CUDA Server: pip install onnxruntime-gpu
+onnxruntime>=1.16.0
+
+# Image & Video Processing
+opencv-python>=4.8.0
+albumentations>=1.3.0
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.8
+
+# Object Detection Benchmark & COCO Evaluation
+pycocotools>=2.0.6
+
+# Hardware Monitoring & Telemetry
+psutil>=5.9.0
+GPUtil>=1.4.0
+tqdm>=4.65.0
 
 # Experiment Tracking
-wandb
+wandb>=0.15.0
 
-# FPS / Latency Measurement
-psutil
-GPUtil
-
-# Dashcam Video Demo
-imageio
-imageio-ffmpeg
-
-# Notebook / Reporting
-jupyterlab
-ipywidgets
-tqdm
-seaborn
+# Interactive Notebooks
+jupyterlab>=4.0.0
+ipywidgets>=8.0.0

@@ -1,3 +1,0 @@
-demo_anchors_smoke: {"frames": 12, "measured_frames": 10, "infer_fps": 0.21617898575389868, "pipeline_fps": 0.21576091031144237, "csv_rows": 12}
-demo_aug_smoke: {"frames": 12, "measured_frames": 10, "infer_fps": 0.2088783090258244, "pipeline_fps": 0.20844602750546856, "csv_rows": 12}
-demo_baseline_smoke: {"frames": 12, "measured_frames": 10, "infer_fps": 0.23079043401945087, "pipeline_fps": 0.23028318215307475, "csv_rows": 12}

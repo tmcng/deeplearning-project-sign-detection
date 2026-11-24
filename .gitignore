@@ -236,3 +236,12 @@ data/DashCam/
 *.pth
 *.zip
 *.mp4
+*.onnx
+*.engine
+
+# Local artifacts and demo runs (kept locally, not tracked in git)
+artifacts/
+run_*/
+kaggle_run_*/
+demo_*/
+
