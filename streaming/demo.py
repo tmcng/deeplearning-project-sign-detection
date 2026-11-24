@@ -123,7 +123,8 @@ def load_detector(args, torch):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         tensor = torch.from_numpy(rgb).permute(2, 0, 1).to(args.device, dtype=torch.float32) / 255
         if args.fp16 and str(args.device) != 'cpu':
-            with torch.cuda.amp.autocast(dtype=torch.float16):
+            autocast_ctx = torch.amp.autocast('cuda', dtype=torch.float16) if hasattr(torch, 'amp') and hasattr(torch.amp, 'autocast') else torch.cuda.amp.autocast(dtype=torch.float16)
+            with autocast_ctx:
                 pred = model([tensor])[0]
         else:
             pred = model([tensor])[0]
