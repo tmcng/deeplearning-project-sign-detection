@@ -1,0 +1,154 @@
+{
+  "started_utc": "2026-11-24T15:57:52.287960+00:00",
+  "command": [
+    "/kaggle/working/deeplearning-project-sign-detection/streaming/demo.py",
+    "--model",
+    "faster-rcnn",
+    "--weights",
+    "faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.pth",
+    "--config",
+    "faster_rcnn/configs/experiment/exp03_fpn_aug.yaml",
+    "--source",
+    "/kaggle/input/datasets/hpwj123/video2/video_da_cat.mp4",
+    "--device",
+    "cuda:0",
+    "--fp16",
+    "--max-frames",
+    "5400",
+    "--headless",
+    "--save-video",
+    "--track",
+    "--output-dir",
+    "run_kaggle_fr_gpu1"
+  ],
+  "arguments": {
+    "model": "faster-rcnn",
+    "weights": "faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.pth",
+    "config": "faster_rcnn/configs/experiment/exp03_fpn_aug.yaml",
+    "source": "/kaggle/input/datasets/hpwj123/video2/video_da_cat.mp4",
+    "device": "cuda:0",
+    "imgsz": 1280,
+    "conf": 0.3,
+    "max_frames": 5400,
+    "warmup": 10,
+    "output_dir": "run_kaggle_fr_gpu1",
+    "headless": true,
+    "save_video": true,
+    "track": true,
+    "read_timeout_ms": 5000,
+    "threads": 4,
+    "fp16": true,
+    "compile": false,
+    "roi": [
+      0.35,
+      0.0,
+      1.0,
+      0.75
+    ]
+  },
+  "weights_sha256": "5e0fbfd2f372b14eb23eb9002d649ae152df747d206a5f1cb28a308b6d7c3bdb",
+  "python": "3.13.16 (main, Oct  1 2026, 15:40:24) [GCC 13.3.0]",
+  "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+  "processor": "x86_64",
+  "torch": "2.11.0+cu130",
+  "opencv": "4.14.0",
+  "device": "cuda:0",
+  "threads": 4,
+  "gpu": "Tesla T4",
+  "precision": "float16",
+  "batch_size": 1,
+  "roi": [
+    0.35,
+    0.0,
+    1.0,
+    0.75
+  ],
+  "timing_contract": "infer_ms: adapter preprocessing, transfer, inference, postprocessing, CPU results; pipeline_ms: capture through draw, optional encode/display and detection log, excludes CSV write; startup and warmup excluded. Sequential capture, no latest-frame dropping; no glass-to-glass latency claim.",
+  "torchvision": "0.26.0+cu130",
+  "git_revision": "5e3175951ea7bc6a17fc72434eeae5b84b290891",
+  "git_dirty": false,
+  "implementation_sha256": "839165dcb3f1b503a938c73e755d641b8b00652aa04b31d8d808899c1360ed37",
+  "source_sha256": "78ebfb03580136d8c1ee30c80f07cf89815abbb27dc48e09a21f084fc35ef1a8",
+  "experiment": "exp03_fpn_aug",
+  "model_config": {
+    "architecture": "fasterrcnn_resnet50_fpn",
+    "pretrained_weights": "COCO_V1",
+    "backbone": {
+      "name": "resnet50",
+      "trainable_layers": 3
+    },
+    "rpn": {
+      "anchor_sizes": [
+        [
+          8
+        ],
+        [
+          16
+        ],
+        [
+          32
+        ],
+        [
+          64
+        ],
+        [
+          128
+        ]
+      ],
+      "aspect_ratios": [
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ],
+        [
+          0.8,
+          1.0,
+          1.25
+        ]
+      ]
+    },
+    "transform": {
+      "min_size": 800,
+      "max_size": 1800
+    }
+  },
+  "class_id_convention": "COCO category indices 1..7 (0 background)",
+  "config_sha256": "d864e1ab4acfc639ff8f7e0d03f4f3d31ec3193d8e74f62593c534726beb7667",
+  "source_fps": 30.0,
+  "source_dimensions": [
+    1280,
+    720
+  ],
+  "status": "completed",
+  "error": null,
+  "frames": 5400,
+  "measured_frames": 5390,
+  "infer_fps": 12.186293998350493,
+  "infer_latency_ms": {
+    "mean": 82.05940215584472,
+    "p50": 82.29604399980417,
+    "p95": 85.55548865003857
+  },
+  "pipeline_fps": 11.147166496851689,
+  "pipeline_latency_ms": {
+    "mean": 89.70889600352083,
+    "p50": 89.74634699984563,
+    "p95": 93.58773920016574
+  }
+}

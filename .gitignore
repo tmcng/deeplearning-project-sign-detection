@@ -232,6 +232,7 @@ reports/eval_test/
 reports/vis*/
 reports/check_yolo/
 faster_rcnn/checkpoints/
+data/images
 data/DashCam/
 *.pth
 *.zip
@@ -239,9 +240,10 @@ data/DashCam/
 *.onnx
 *.engine
 
-# Local artifacts and demo runs (kept locally, not tracked in git)
+# Local artifacts and demo runs, logging (kept locally, not tracked in git)
 artifacts/
 run_*/
 kaggle_run_*/
 demo_*/
+logging/
 
