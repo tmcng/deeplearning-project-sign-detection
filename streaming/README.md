@@ -11,9 +11,9 @@ Hệ sinh thái suy luận thời gian thực (Real-time Video Inference), bám 
 2. [Bảng kết quả tối ưu hóa hiệu năng (Optimization Ladder)](#2-bảng-kết-quả-tối-ưu-hóa-hiệu-năng)
 3. [Hướng dẫn chạy trên Local (Laptop GPU RTX 3050 / Windows)](#3-hướng-dẫn-chạy-trên-local-laptop-rtx-3050)
 4. [Hướng dẫn chạy trên Kaggle Notebook (GPU T4 / P100)](#4-hướng-dẫn-chạy-trên-kaggle-notebook)
-5. [Mô phỏng luồng Camera RTSP qua MediaMTX](#5-mô-phỏng-luồng-camera-rtsp-qua-mediamtx)
-6. [Xuất & Chạy với ONNX Runtime (DirectML / TensorRT)](#6-xuất--chạy-với-onnx-runtime)
-7. [Tích hợp mô hình YOLO (Của thành viên nhóm)](#7-tích-hợp-mô-hình-yolo)
+5. [Xuất & Chạy với ONNX Runtime (DirectML / TensorRT)](#5-xuất--chạy-với-onnx-runtime)
+6. [Tối ưu hóa suy luận nâng cao với TensorRT](#6-tối-ưu-hóa-suy-luận-nâng-cao-với-tensorrt)
+7. [Mô phỏng luồng Camera RTSP qua MediaMTX (Thời gian thực)](#7-mô-phỏng-luồng-camera-rtsp-qua-mediamtx)
 8. [Bảng tra cứu tham số dòng lệnh CLI](#8-bảng-tra-cứu-tham-số-dòng-lệnh-cli)
 
 ---
@@ -28,7 +28,7 @@ streaming/
 ├── visualizer.py         # StreamVisualizer (HUD telemetry, Bounding Box, Tracking ID, Khung ROI)
 ├── metrics.py            # MetricsCollector (Thu thập latency, tính toán mean/p50/p95, xuất CSV/JSON)
 ├── pipeline.py           # StreamingInferencePipeline điều phối toàn bộ chu trình xử lý
-├── export_onnx.py        # Tiện ích CLI chuyển đổi mô hình Faster R-CNN sang ONNX
+├── export_onnx.py        # Tiện ích CLI chuyển đổi mô hình Faster R-CNN và YOLO sang ONNX
 ├── backends/             # Strategy Pattern cho các engine suy luận
 │   ├── base.py           # Interface trừu tượng BaseDetector
 │   ├── factory.py        # DetectorFactory tự động định tuyến backend theo file & tham số
@@ -45,7 +45,7 @@ streaming/
 
 ## 2. Bảng kết quả tối ưu hóa hiệu năng
 
-Toàn bộ các phép đo được thực hiện trên cùng 300 khung hình video dashcam chuẩn (`data/DashCam/traffic.mp4`, độ phân giải 1280×720), tự động loại trừ 10 khung hình khởi động (warmup):
+Toàn bộ các phép đo được thực hiện trên cùng 300 khung hình video dashcam chuẩn (`data/DashCam/video_da_cat.mp4` hoặc `data/DashCam/traffic.mp4`, độ phân giải 1280×720), tự động loại trừ 10 khung hình khởi động (warmup):
 
 | Cấp độ | Môi trường / Thiết bị | Chiến lược tối ưu hóa | Infer FPS | Pipeline FPS | Độ trễ (Latency/frame) | Tăng tốc (Speedup) |
 | :---: | :---: | :--- | :---: | :---: | :---: | :---: |
@@ -71,14 +71,14 @@ python -c "import torch; print('CUDA Available:', torch.cuda.is_available(), '| 
 ```
 
 ### Bước 2: Chạy Demo trực tiếp (Mở cửa sổ UI màn hình)
-Bỏ cờ `--headless` để hiển thị cửa sổ trực quan trong buổi thuyết trình:
+Bỏ cờ `--headless` để hiển thị cửa sổ trực quan:
 
 ```powershell
 python -m streaming.demo `
   --model faster-rcnn `
   --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
   --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
-  --source data/DashCam/traffic.mp4 `
+  --source data/DashCam/video_da_cat.mp4 `
   --device cuda:0 `
   --fp16 `
   --roi-preset right `
@@ -103,7 +103,7 @@ Trong cell đầu tiên của notebook Kaggle (bật GPU T4 hoặc P100):
 !git pull origin faster-rcnn
 ```
 
-### Bước 2: Xử lý weights từ Kaggle Input
+### Bước 2: Chuẩn hóa weights từ Kaggle Input
 Do cơ chế auto-unzip của Kaggle Datasets với file `.zip`, bạn dùng cell Python sau để chuẩn hóa weights vào `faster_rcnn/checkpoints/`:
 
 ```python
@@ -128,6 +128,8 @@ for name in ["fasterrcnn_baseline_best1", "fasterrcnn_fpn_small_anchor_best", "f
 ```
 
 ### Bước 3: Chạy Benchmark & Xuất Video
+
+#### A. Chạy với Faster R-CNN:
 ```bash
 !python -m streaming.demo \
   --model faster-rcnn \
@@ -143,6 +145,20 @@ for name in ["fasterrcnn_baseline_best1", "fasterrcnn_fpn_small_anchor_best", "f
   --output-dir run_kaggle_gpu_opt
 ```
 
+#### B. Chạy với YOLO (Checkpoint PyTorch `.pt`):
+```bash
+!python -m streaming.demo \
+  --model yolo \
+  --weights faster_rcnn/checkpoints/best.pt \
+  --source /kaggle/input/datasets/hpwj123/video1/traffic.mp4 \
+  --device cuda:0 \
+  --fp16 \
+  --headless \
+  --save-video \
+  --track \
+  --output-dir run_kaggle_yolo_opt
+```
+
 ### Bước 4: Xem trực tiếp video trong Notebook
 ```python
 from IPython.display import Video
@@ -151,9 +167,105 @@ Video("run_kaggle_gpu_opt/demo.mp4", embed=True, width=700)
 
 ---
 
-## 5. Mô phỏng luồng Camera RTSP qua MediaMTX
+## 5. Xuất & Chạy với ONNX Runtime
 
-Dành cho kịch bản kiểm tra khả năng truyền dẫn mạng thời gian thực:
+Mô hình sau khi xuất sang ONNX đã được "nướng cứng" (baked-in) toàn bộ cấu trúc mạng và tham số, do đó khi suy luận **không cần mang theo file config YAML** và có thể chạy độc lập tốc độ cao trên ONNX Runtime.
+
+### Bước 1: Xuất checkpoint sang định dạng ONNX
+
+Thư mục lưu mô hình ONNX quy chuẩn: `faster_rcnn/checkpoints/to_onnx/`
+
+#### A. Xuất mô hình Faster R-CNN:
+```powershell
+python -m streaming.export_onnx `
+  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
+  --output faster_rcnn/checkpoints/to_onnx/fasterrcnn_fpn_aug.onnx
+```
+
+#### B. Xuất mô hình YOLO:
+Bạn có thể xuất mô hình YOLO (`.pt`) sang ONNX theo một trong các cách sau:
+
+* **Cách 1: Sử dụng tiện ích đồng bộ của module `streaming`:**
+  ```powershell
+  python -m streaming.export_onnx `
+    --model yolo `
+    --weights faster_rcnn/checkpoints/best.pt `
+    --output faster_rcnn/checkpoints/to_onnx/yolo.onnx `
+    --opset 14 `
+    --imgsz 640
+  ```
+
+* **Cách 2: Sử dụng trực tiếp CLI của Ultralytics:**
+  ```powershell
+  yolo export model=faster_rcnn/checkpoints/best.pt format=onnx opset=14 imgsz=640 dynamic=True
+  ```
+
+* **Cách 3: Chạy script Python ngắn:**
+  ```python
+  from ultralytics import YOLO
+  model = YOLO("faster_rcnn/checkpoints/best.pt")
+  model.export(format="onnx", opset=14, dynamic=True, imgsz=640)
+  ```
+
+> 💡 **Giải thích tham số xuất ONNX:**
+> * `--opset 14`: Phiên bản tập toán tử ONNX chuẩn. Mức 14 hỗ trợ đầy đủ toán tử Detection/NMS hiện đại và đạt độ tương thích cao nhất trên ONNX Runtime, DirectML (Windows RTX 3050) và TensorRT.
+> * `--imgsz 640`: Kích thước cạnh ảnh đầu vào ($640 \times 640$ pixels). Đây là độ phân giải chuẩn của YOLO, cân bằng tối ưu giữa tốc độ thời gian thực (FPS cao, độ trễ thấp) và độ chính xác mAP.
+
+### Bước 2: Chạy suy luận qua ONNX Runtime
+Backend ONNX Runtime tự động ưu tiên: `TensorrtExecutionProvider` ➔ `CUDAExecutionProvider` ➔ `DmlExecutionProvider` (DirectML cho Windows RTX 3050):
+
+* **Chạy với Faster R-CNN ONNX:**
+  ```powershell
+  python -m streaming.demo `
+    --model onnx `
+    --weights faster_rcnn/checkpoints/to_onnx/fasterrcnn_fpn_aug.onnx `
+    --source data/DashCam/video_da_cat.mp4 `
+    --device cuda:0 `
+    --track `
+    --output-dir demo_onnx_faster_rcnn
+  ```
+
+* **Chạy với YOLO ONNX:**
+  ```powershell
+  python -m streaming.demo `
+    --model yolo `
+    --weights faster_rcnn/checkpoints/to_onnx/yolo.onnx `
+    --source data/DashCam/video_da_cat.mp4 `
+    --device cuda:0 `
+    --track `
+    --output-dir demo_onnx_yolo
+  ```
+
+---
+
+## 6. Tối ưu hóa suy luận nâng cao với TensorRT
+
+Đối với phần cứng GPU NVIDIA có nhân Tensor Cores, TensorRT là giải pháp tăng tốc phần cứng đạt hiệu năng cao nhất hiện nay.
+
+### Chạy suy luận YOLO với TensorRT Engine (`.engine`):
+```powershell
+# Chạy trực tiếp qua streaming demo:
+python -m streaming.demo `
+  --model yolo `
+  --weights faster_rcnn/checkpoints/best.engine `
+  --source data/DashCam/video_da_cat.mp4 `
+  --device cuda:0 `
+  --output-dir demo_yolo_trt
+```
+*(Cách xuất file `.engine` từ checkpoint YOLO: `yolo export model=faster_rcnn/checkpoints/best.pt format=engine device=0`)*
+
+### 💡 Tại sao TensorRT Engine (.engine) không áp dụng trực tiếp được cho Faster R-CNN?
+* **Kiến trúc Two-Stage phức tạp và luồng điều khiển động (Data-dependent dynamic control flow):** Faster R-CNN chứa tầng RPN (Region Proposal Network) sinh ra số lượng hộp ứng viên biến thiên liên tục tùy vào độ phức tạp của từng khung hình. Sau đó là các phép toán hình học động (`RoIAlign` / `RoIPooling`) và thuật toán lọc trùng lặp đa lớp `batched_nms` viết bằng các custom C++ kernel của `torchvision`.
+* **Giới hạn của TensorRT Engine:** TensorRT được thiết kế để tối ưu hóa đồ thị tĩnh (Static Graph Optimization: gộp kernel, cấp phát tĩnh trước vùng nhớ VRAM). TensorRT thuần không thể biên dịch trực tiếp các custom C++ ops của `torchvision` nếu không tự viết riêng các C++ TensorRT Plugin phức tạp (như `EfficientNMS_TRT`, `ROIAlign_TRT`).
+* **Ưu thế của YOLO:** YOLO là kiến trúc Single-Stage dạng đồ thị tensor thuần nhất (End-to-End Tensor). Dữ liệu chảy thẳng qua các tầng tích chập từ ảnh đầu vào $640 \times 640 \times 3$ đến ma trận đầu ra cố định $[1, 84, 8400]$, không phụ thuộc vào dynamic proposals hay custom C++ kernels, do đó Ultralytics có thể tự động build sang TensorRT `.engine` hoàn toàn tự động chỉ với 1 lệnh.
+* *(Giải pháp cho Faster R-CNN trên Windows GPU NVIDIA là xuất sang **ONNX** và chạy qua **ONNX Runtime (DirectML / CUDA)** như đã hướng dẫn ở Phần 5).*
+
+---
+
+## 7. Mô phỏng luồng Camera RTSP qua MediaMTX (Thời gian thực)
+
+Dành cho kịch bản kiểm tra khả năng truyền dẫn mạng thời gian thực qua giao thức RTSP:
 
 1. **Terminal 1 - Khởi động RTSP Server:**
    ```powershell
@@ -162,60 +274,32 @@ Dành cho kịch bản kiểm tra khả năng truyền dẫn mạng thời gian 
 
 2. **Terminal 2 - Phát lặp video qua RTSP:**
    ```powershell
-   ffmpeg -re -stream_loop -1 -i data/DashCam/traffic.mp4 -c copy -f rtsp rtsp://127.0.0.1:8554/live/traffic
+   ffmpeg -re -stream_loop -1 -i data/DashCam/video_da_cat.mp4 -c copy -f rtsp rtsp://127.0.0.1:8554/live/traffic
    ```
 
-3. **Terminal 3 - Chạy hệ thống suy luận:**
-   ```powershell
-   python -m streaming.demo `
-     --model faster-rcnn `
-     --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
-     --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
-     --source rtsp://127.0.0.1:8554/live/traffic `
-     --device cuda:0 `
-     --fp16 `
-     --track `
-     --output-dir demo_rtsp_live
-   ```
+3. **Terminal 3 - Chạy hệ thống suy luận thời gian thực với mô hình ONNX:**
+   * **Với Faster R-CNN (Chạy qua ONNX Runtime - DirectML / CUDA):**
+     ```powershell
+     python -m streaming.demo `
+       --model onnx `
+       --weights faster_rcnn/checkpoints/to_onnx/fasterrcnn_fpn_aug.onnx `
+       --source rtsp://127.0.0.1:8554/live/traffic `
+       --device cuda:0 `
+       --track `
+       --output-dir demo_rtsp_live_faster_rcnn
+     ```
+   * **Với YOLO (Chạy qua YOLO ONNX Engine):**
+     ```powershell
+     python -m streaming.demo `
+       --model yolo `
+       --weights faster_rcnn/checkpoints/to_onnx/yolo.onnx `
+       --source rtsp://127.0.0.1:8554/live/traffic `
+       --device cuda:0 `
+       --track `
+       --output-dir demo_rtsp_live_yolo
+     ```
 
----
-
-## 6. Xuất & Chạy với ONNX Runtime
-
-### Bước 1: Xuất checkpoint sang định dạng ONNX
-```powershell
-python -m streaming.export_onnx `
-  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
-  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip `
-  --output faster_rcnn/checkpoints/fasterrcnn_fpn_aug.onnx
-```
-
-### Bước 2: Chạy suy luận qua ONNX Runtime
-Backend ONNX Runtime tự động ưu tiên: `TensorrtExecutionProvider` ➔ `CUDAExecutionProvider` ➔ `DmlExecutionProvider` (DirectML cho Windows RTX 3050):
-```powershell
-python -m streaming.demo `
-  --model onnx `
-  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug.onnx `
-  --source data/DashCam/traffic.mp4 `
-  --device cuda:0 `
-  --track `
-  --output-dir demo_onnx_run
-```
-
----
-
-## 7. Tích hợp mô hình YOLO
-
-Hệ thống hỗ trợ sẵn mô hình YOLO của thành viên nhóm phụ trách YOLO:
-
-* **Chạy với checkpoint PyTorch (`.pt`):**
-  ```powershell
-  python -m streaming.demo --model yolo --weights yolov8s.pt --source data/DashCam/traffic.mp4 --device cuda:0 --output-dir demo_yolo_pt
-  ```
-* **Chạy với TensorRT Engine (`.engine`):**
-  ```powershell
-  python -m streaming.demo --model yolo --weights yolov8s.engine --source data/DashCam/traffic.mp4 --device cuda:0 --output-dir demo_yolo_trt
-  ```
+   > 💡 **Ghi chú:** Khi chạy với RTSP stream thực tế, sử dụng định dạng **ONNX** là phương án tối ưu nhất vì mô hình đã được tối ưu hóa đồ thị tính toán, không cần nạp PyTorch config cồng kềnh, giúp giảm thiểu tối đa độ trễ (latency) và hiện tượng drop frame qua đường truyền mạng. (Nếu muốn kiểm thử với checkpoint PyTorch gốc, bạn có thể truyền `--weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.zip` kèm `--config`).
 
 ---
 

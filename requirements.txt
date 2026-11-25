@@ -22,6 +22,7 @@ ultralytics>=8.0.0
 
 # Model Export & Accelerated Inference (ONNX / TensorRT / DirectML)
 onnx>=1.14.0
+onnxscript>=0.1.0
 # For Windows Laptop (RTX 3050 / DirectX 12): pip install onnxruntime-directml
 # For Linux CUDA Server: pip install onnxruntime-gpu
 onnxruntime>=1.16.0

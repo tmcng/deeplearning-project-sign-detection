@@ -82,7 +82,7 @@ class StreamingInferencePipeline:
             "opencv": cv2.__version__,
             "device": str(self.device),
             "threads": self.config.threads,
-            "gpu": torch.cuda.get_device_name(self.device) if self.device.type == "cuda" else None,
+            "gpu": torch.cuda.get_device_name(self.device) if (self.device.type == "cuda" and torch.cuda.is_available()) else None,
             "precision": "float16" if self.config.use_fp16 else "float32",
             "batch_size": 1,
             "roi": list(self.config.roi) if self.config.roi else None,
@@ -257,7 +257,10 @@ class StreamingInferencePipeline:
             if writer is not None:
                 writer.release()
             if not self.config.headless:
-                cv2.destroyAllWindows()
+                try:
+                    cv2.destroyAllWindows()
+                except Exception:
+                    pass
 
             summary = self.metrics.finalize(metadata, status, error_msg)
             print(
