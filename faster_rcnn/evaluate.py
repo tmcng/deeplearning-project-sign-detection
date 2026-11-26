@@ -214,6 +214,9 @@ def predict(
         if dry_run:
             break
 
+    unique_images = len(set(r["image_id"] for r in results))
+    total_images = len(data_loader.dataset) if hasattr(data_loader, "dataset") else "?"
+    print(f"[PREDICT] Hoàn tất inference: {len(results)} boxes trên {unique_images}/{total_images} ảnh (ngưỡng conf >= {conf_thresh})")
     return results
 
 
@@ -399,6 +402,7 @@ def _evaluate_from_model(args: argparse.Namespace) -> None:
     conf_thresh: float = (
         args.conf_thresh if args.conf_thresh is not None else cfg["CONF_THRESHOLD"]
     )
+    cfg["CONF_THRESHOLD"] = conf_thresh
 
     print("=" * 54)
     print(f"  EVALUATE: {exp_name.upper()} | split={args.split} | conf_thresh={conf_thresh}")

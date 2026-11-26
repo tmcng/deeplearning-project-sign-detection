@@ -82,6 +82,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
     transform_cfg: Dict[str, Any] = model_cfg.get("transform", {})
     min_size: int = transform_cfg.get("min_size", DEFAULT_MIN_SIZE)
     max_size: int = transform_cfg.get("max_size", DEFAULT_MAX_SIZE)
+    box_score_thresh: float = cfg.get("CONF_THRESHOLD", 0.001)
 
     if arch == "fasterrcnn_resnet50_fpn":
         model = fasterrcnn_resnet50_fpn(
@@ -90,6 +91,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
             rpn_anchor_generator=rpn_anchor_generator,
             min_size=min_size,
             max_size=max_size,
+            box_score_thresh=box_score_thresh,
         )
     elif arch == "fasterrcnn_resnet50_fpn_v2":
         try:
@@ -104,6 +106,7 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
                 rpn_anchor_generator=rpn_anchor_generator,
                 min_size=min_size,
                 max_size=max_size,
+                box_score_thresh=box_score_thresh,
             )
         except ImportError as exc:
             raise ImportError(
