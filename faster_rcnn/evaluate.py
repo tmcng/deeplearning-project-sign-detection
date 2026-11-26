@@ -361,6 +361,9 @@ def _evaluate_from_pred_file(args: argparse.Namespace) -> None:
 
     print("=" * 54)
     print("  EVALUATE HOÀN TẤT")
+    print(f"  [OK] File Predictions: {os.path.abspath(pred_path)}")
+    print(f"  [OK] Báo cáo chi tiết: {os.path.abspath(report_dir)}/{exp_name}.json")
+    print(f"  [OK] Bảng tổng hợp:    {os.path.abspath(report_dir)}/results.md")
     print("=" * 54)
 
 
@@ -452,6 +455,9 @@ def _evaluate_from_model(args: argparse.Namespace) -> None:
 
     print("=" * 54)
     print("  EVALUATE HOÀN TẤT")
+    print(f"  [OK] File Predictions: {os.path.abspath(pred_path)}")
+    print(f"  [OK] Báo cáo chi tiết: {os.path.abspath(report_dir)}/{exp_name}.json")
+    print(f"  [OK] Bảng tổng hợp:    {os.path.abspath(report_dir)}/results.md")
     print("=" * 54)
 
 
