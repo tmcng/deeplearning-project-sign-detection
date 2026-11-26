@@ -27,7 +27,7 @@ Tài liệu này tóm tắt ngắn gọn các cờ lệnh và quy trình thực 
 * `--weights`: Đường dẫn checkpoint `.pth` hoặc `.zip` tùy chọn (mặc định tự tìm `best` $\rightarrow$ `last`).
 * `--out-pred`: Đường dẫn lưu file predictions JSON (mặc định xuất thẳng vào `preds/`).
 * `--name`: Tên thí nghiệm ghi vào `reports/eval/` và `results.md` (mặc định lấy theo config `_name`).
-* `--conf-thresh`: Ngưỡng confidence score (mặc định `0.001` để pycocotools quét đủ đường cong PR).
+* `--conf, --conf-thresh`: Ngưỡng confidence score (mặc định `0.001` để pycocotools quét đủ đường cong PR; có thể chỉnh vd `--conf 0.0001` để bắt tối đa ứng viên hoặc `--conf 0.25` để lọc chặt).
 * `--dry-run`: Chạy thử nhanh 1 batch inference sanity check.
 
 ---

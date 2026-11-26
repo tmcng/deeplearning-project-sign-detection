@@ -89,7 +89,10 @@ def get_parser() -> argparse.ArgumentParser:
         "--name", type=str, default=None,
         help="Tên thí nghiệm ghi vào báo cáo (mặc định lấy theo config _name).",
     )
-    parser.add_argument("--conf-thresh", type=float, default=None)
+    parser.add_argument(
+        "--conf", "--conf-thresh", dest="conf_thresh", type=float, default=None,
+        help="Ngưỡng confidence score tối thiểu (mặc định theo config: 0.001, vd: --conf 0.0005 hoặc --conf 0.01).",
+    )
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -176,6 +179,8 @@ def predict(
         Danh sách các dictionary dự đoán theo chuẩn COCO (image_id, category_id, bbox, score).
     """
     model.eval()
+    if hasattr(model, "roi_heads") and hasattr(model.roi_heads, "score_thresh"):
+        model.roi_heads.score_thresh = conf_thresh
     results: List[Dict[str, Any]] = []
 
     pbar = tqdm(data_loader, desc="[PREDICT] Inference", leave=False)
@@ -396,7 +401,7 @@ def _evaluate_from_model(args: argparse.Namespace) -> None:
     )
 
     print("=" * 54)
-    print(f"  EVALUATE: {exp_name.upper()} | split={args.split}")
+    print(f"  EVALUATE: {exp_name.upper()} | split={args.split} | conf_thresh={conf_thresh}")
     print("=" * 54)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
