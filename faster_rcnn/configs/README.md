@@ -16,7 +16,7 @@ configs/
 │   └── dataset_v2_clean.yaml           # Đã lọc box xấu, có oversampling
 ├── augmentation/
 │   ├── no_aug.yaml                     # Không aug (Baseline)
-│   ├── basic.yaml                      # Flip + Brightness/Contrast
+│   ├── basic.yaml                      # Safe Brightness/Contrast (không flip)
 │   └── heavy.yaml                      # Albumentations nâng cao
 ├── model/
 │   ├── fasterrcnn_resnet50_fpn.yaml    # Kiến trúc v1 mặc định
@@ -33,23 +33,26 @@ configs/
 
 ## Cách Sử Dụng
 
+> **Lưu ý:** Tất cả các lệnh dưới đây đều được thực thi từ **thư mục gốc của dự án** (`sign-detection/`).
+
 ### Chạy thí nghiệm cụ thể
 ```bash
-python train.py --config configs/experiment/exp01_baseline.yaml
-python train.py --config configs/experiment/exp02_fpn_small_anchor.yaml
-python train.py --config configs/experiment/exp03_fpn_aug.yaml
+python faster_rcnn/train.py --config faster_rcnn/configs/experiment/exp01_baseline.yaml
+python faster_rcnn/train.py --config faster_rcnn/configs/experiment/exp02_fpn_small_anchor.yaml
+python faster_rcnn/train.py --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml
 ```
 
 ### Debug nhanh (1 batch, CPU)
 ```bash
-python train.py --config configs/train.yaml --trainer debug_cpu
+python faster_rcnn/train.py --config faster_rcnn/configs/train.yaml --trainer debug_cpu --dry-run --no-wandb
 ```
 
 ### Override từng tham số qua CLI
 ```bash
-python train.py --config configs/experiment/exp03_fpn_aug.yaml \
+python faster_rcnn/train.py --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml \
     --trainer gpu_fp16 \
-    --paths server_gpu
+    --batch-size 4 \
+    --lr 0.001
 ```
 
 ## Quy tắc Thiết kế
@@ -60,4 +63,3 @@ python train.py --config configs/experiment/exp03_fpn_aug.yaml \
 | **Không hard-code path** | Tất cả path dùng `project_root` relative |
 | **experiment/ = ablation log** | File exp phản ánh chính xác 1 thay đổi để so sánh công bằng |
 | **trainer/ tách hardware** | Tách cấu hình phần cứng (FP16/FP32, num_workers) ra khỏi logic model |
-
