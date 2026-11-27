@@ -12,6 +12,14 @@ Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô
 | YOLOv8s, imgsz 1280 | 82.2 | 76.8 | 50.8 | 45.1 |
 | Faster R-CNN R50-FPN (exp03) | 75.2 | 69.3 | 41.8 | 35.9 |
 
+**Video demo nhận diện biển báo — YOLO**
+
+<video src="demo_rtsp_live_yolo/yolo1.mp4" controls muted playsinline width="800">
+  <a href="demo_rtsp_live_yolo/yolo1.mp4">Xem video demo YOLO</a>
+</video>
+
+[▶ Mở video demo YOLO](demo_rtsp_live_yolo/yolo1.mp4)
+
 - YOLOv8s 1280 hơn Faster R-CNN 7.5 điểm mAP@0.5. Khoảng tin cậy 95% bootstrap là [4.5, 10.2], tức có ý nghĩa thống kê.
 - Cắt ô + SAHI hơn 1280 1.3 điểm, nhưng chênh lệch này không có ý nghĩa thống kê.
 - Bảng đầy đủ: [reports/eval/results.md](reports/eval/results.md). Báo cáo cuối (LaTeX, template ACL): [report/main.tex](report/main.tex).

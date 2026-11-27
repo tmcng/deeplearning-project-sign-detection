@@ -248,3 +248,7 @@ demo_*/
 logging/
 tests/
 
+# Publish this demo run, including its video.
+!/demo_rtsp_live_yolo/
+!/demo_rtsp_live_yolo/**
+
