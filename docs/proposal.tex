@@ -5,23 +5,30 @@
 
 % Standard packages
 \usepackage{microtype}
+\usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 % Vietnamese support - XeLaTeX
 \usepackage{fontspec}
 \setmainfont{TeX Gyre Termes}
 
 \renewcommand{\tablename}{Bảng}
+\renewcommand{\figurename}{Hình}
+
+% Macro đánh dấu phần chờ thành viên C xác nhận hoặc bổ sung
+\newcommand{\needconfirm}[1]{\textcolor{red}{\textbf{[CẦN XÁC NHẬN/BỔ SUNG: #1]}}}
 
 % ------------------------------------------------
 % TITLE AND AUTHORS
 % ------------------------------------------------
 
-\title{Phát hiện biển báo giao thông Việt Nam:\\
-So sánh YOLOv8 và Faster R-CNN\\
-(Proposal -- Nhóm 19)}
+\title{Phát hiện biển báo giao thông Việt Nam trong điều kiện vật thể siêu nhỏ:\\
+So sánh thực nghiệm YOLOv8 và Faster R-CNN}
 
 \author{
 Hoàng Hải Anh \\ 24022248
@@ -30,8 +37,8 @@ Tạ Mạnh Cường \\ 24022278
 \And
 Phạm Thế Hưng \\ 24022350
 \AND
-Học sâu -- GV: Nguyễn Việt Hà \\
-Trường Đại học Công nghệ, ĐHQGHN
+Nhóm 19 -- Môn Học sâu -- GV: Nguyễn Việt Hà \\
+Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội
 }
 
 \begin{document}
@@ -39,32 +46,153 @@ Trường Đại học Công nghệ, ĐHQGHN
 \maketitle
 
 % ------------------------------------------------
-% 1. PROBLEM
+% 1. ABSTRACT (150 - 250 words)
 % ------------------------------------------------
 
-\section{Bài toán}
-
-Phát hiện biển báo giao thông là bài toán cốt lõi trong các hệ thống hỗ trợ lái xe nâng cao (ADAS) và xe tự hành. Trong điều kiện giao thông đường bộ Việt Nam, bài toán đặt ra nhiều thách thức đặc thù: camera hành trình góc rộng khiến đa số biển báo ở xa có kích thước cực nhỏ, nhiều biển đứng sát nhau tạo thành cụm, điều kiện chiếu sáng phức tạp và sự mất cân bằng lớn về số lượng mẫu giữa các loại biển.
-
-\paragraph{Đầu vào.}
-Một ảnh RGB $I$ kích thước $1622 \times 626 \times 3$ được chụp từ camera hành trình phía trước phương tiện giao thông.
-
-\paragraph{Đầu ra.}
-Danh sách các phát hiện $(b_i, c_i, s_i)$, trong đó $b_i = [x, y, w, h]$ là tọa độ hộp bao (tính theo pixel trên ảnh gốc), $c_i \in \{1, \dots, K\}$ với $K=7$ loại biển báo chuẩn và $s_i \in [0, 1]$ là độ tin cậy của dự đoán.
+\begin{abstract}
+Phát hiện biển báo giao thông tại Việt Nam từ camera hành trình đối mặt với thách thức vật thể siêu nhỏ, biển đứng cụm và mất cân bằng lớp. Nghiên cứu này so sánh có hệ thống mô hình một giai đoạn (\textbf{YOLOv8s}) và hai giai đoạn (\textbf{Faster R-CNN ResNet50-FPN}) trên bộ dữ liệu Zalo AI Challenge 2020 gồm 4.500 ảnh ($1622 \times 626$ pixel, 7 lớp). Nhóm làm sạch 1.923 hộp nhãn lặp (17,5\%) còn 9.077 hộp (77,6\% có diện tích $<32^2$ pixel) và chia tập phân tầng theo mã tuyến đường (\texttt{street\_id}) nhằm ngăn rò rỉ dữ liệu (+5,7 điểm mAP@0.5 ảo khi chia ngẫu nhiên). Trên tập validation, mở khóa backbone, thu nhỏ anchor (8--128 pixel), tăng giới hạn ảnh và áp dụng safe augmentation giúp Faster R-CNN nâng mAP@0.5:0.95 từ 41,6\% lên 48,6\% và $\text{AP}_{\text{small}}$ từ 33,5\% lên 41,3\% (41,8\% mAP@0.5:0.95 trên tập test). Với YOLOv8s, nâng độ phân giải lên 1280 đạt 82,2\% mAP@0.5 (50,2\% $\text{AP}_{\text{small}}$), trong khi cắt mảnh ảnh kết hợp SAHI đạt đỉnh 83,9\% mAP@0.5 (57,9\% mAP@0.5:0.95, 52,3\% $\text{AP}_{\text{small}}$). Các phương pháp cân bằng lớp không cải thiện lớp hiếm do lỗi chủ yếu đến từ bỏ sót biển nhỏ và nhầm lẫn giữa các biển tròn viền đỏ. Trên GPU Tesla T4 (FP16), YOLOv8s đạt 46,28 FPS toàn trình (vượt chuẩn 30 FPS), còn Faster R-CNN tối ưu ROI đạt 11,15 FPS.
+\end{abstract}
 
 % ------------------------------------------------
-% 2. DATASET
+% 2. INTRODUCTION
 % ------------------------------------------------
 
-\section{Dữ liệu}
+\section{Giới thiệu (Introduction)}
 
-Nhóm sử dụng bộ dữ liệu \emph{Zalo AI Challenge 2020 -- Traffic Sign Detection} \citep{zalo2020traffic}, gồm 4.500 ảnh đường phố Việt Nam cùng độ phân giải $1622 \times 626$, thuộc 7 lớp biển báo: \textit{Nguy hiểm}, \textit{Cấm dừng và đỗ}, \textit{Cấm còn lại}, \textit{Cấm ngược chiều}, \textit{Hiệu lệnh}, \textit{Giới hạn tốc độ} và \textit{Cấm rẽ}. Do tập kiểm tra gốc không có nhãn công khai, nhóm tự chia lại tập dữ liệu có nhãn.
+Phát hiện biển báo giao thông tự động là thành phần thiết yếu trong các hệ thống hỗ trợ lái xe nâng cao (ADAS) và xe tự hành. Khác với các bộ dữ liệu giao thông chuẩn mực ở châu Âu hay Bắc Mỹ, bối cảnh đường bộ Việt Nam từ camera hành trình góc rộng đặt ra bốn thách thức kỹ thuật đồng thời: (1) \textbf{kích thước vật thể siêu nhỏ}, với 77,6\% biển báo có diện tích dưới $32^2$ pixel và trung vị cạnh chỉ 16,5 pixel trên ảnh gốc $1622 \times 626$; (2) \textbf{biển báo đứng thành cụm}, chiếm khoảng 27--38\% số ảnh; (3) \textbf{mất cân bằng lớp} gấp 4,8 lần giữa lớp phổ biến nhất và lớp hiếm nhất; và (4) \textbf{nhiễu dữ liệu và phụ thuộc thời gian} giữa các khung hình liên tiếp cùng một tuyến đường.
 
-\paragraph{Làm sạch nhãn.}
-Kiểm tra trực quan cho thấy 1.923 box (17,5\% trên tổng 11.000 box gốc, thuộc 747 ảnh) bị gán trùng lặp từ 2--6 lần cho cùng một biển báo vật lý. Nếu giữ nguyên, các box trùng này sẽ làm giảm recall trần xuống 77\%. Nhóm tiến hành gộp các box cùng lớp có $\text{IoU} \ge 0{,}45$ thành một box trung bình, thu được 9.077 box sạch.
+\paragraph{Phát biểu bài toán.}
+Cho một ảnh màu RGB đầu vào $I \in \mathbb{R}^{H \times W \times 3}$ chụp từ camera hành trình phía trước phương tiện (kích thước $1622 \times 626 \times 3$ trên tập dữ liệu chuẩn và $1280 \times 720 \times 3$ ở luồng video 30 FPS), hệ thống cần dự đoán tập hợp các đối tượng $\{(b_i, c_i, s_i)\}_{i=1}^{M}$, trong đó $b_i = [x, y, w, h]$ là tọa độ hộp bao theo pixel trên ảnh gốc, $c_i \in \{1, \dots, 7\}$ là nhãn thuộc 7 nhóm biển báo (\textit{Cấm ngược chiều}, \textit{Cấm dừng và đỗ}, \textit{Cấm rẽ}, \textit{Giới hạn tốc độ}, \textit{Cấm còn lại}, \textit{Nguy hiểm}, \textit{Hiệu lệnh}), và $s_i \in [0, 1]$ là điểm tin cậy.
 
-\paragraph{Chia tập dữ liệu.}
-Ảnh camera hành trình có tính phụ thuộc thời gian cao (các khung hình liên tiếp trên cùng đoạn đường rất giống nhau). Nhóm gom cụm theo tuyến đường (\texttt{street\_id}) và phân tầng theo lớp hiếm để chia tập, triệt tiêu hiện tượng rò rỉ dữ liệu (data leakage). Tỉ lệ thực tế đạt được: train 2.933 ảnh (65,2\%), val 696 ảnh (15,5\%) và test 871 ảnh (19,4\%).
+\paragraph{Đóng góp chính.}
+Nghiên cứu này đóng góp ba kết quả trọng tâm:
+\begin{itemize}
+\itemsep0pt
+\item \textbf{Chuẩn hóa dữ liệu và giao thức chia tập chống rò rỉ:} Loại bỏ 17,5\% hộp nhãn gán trùng lặp, xây dựng quy trình chia tập theo \texttt{street\_id} kết hợp phân tầng lớp hiếm, đồng thời định lượng mức độ sai lệch đánh giá do rò rỉ khung hình liên tiếp.
+\item \textbf{So sánh toàn diện hai trường phái phát hiện và khảo sát cải tiến:} Đánh giá công bằng qua \texttt{pycocotools} giữa Faster R-CNN ResNet50-FPN (tinh chỉnh anchor nhỏ, ảnh lớn, safe augmentation) và YOLOv8s (mở rộng độ phân giải, Tiling+SAHI, cân bằng lớp bằng RFS và \texttt{cls\_pw}).
+\item \textbf{Phân tích lỗi chuyên sâu và đánh giá thời gian thực:} Chỉ ra nguyên nhân cốt lõi của lỗi nhận diện ở nhóm biển siêu nhỏ và cụm biển tròn viền đỏ; xây dựng pipeline demo tích hợp cắt vùng ROI, bám đuôi IoU và đo telemetry chi tiết trên GPU Tesla T4.
+\end{itemize}
+
+% ------------------------------------------------
+% 3. RELATED WORK
+% ------------------------------------------------
+
+\section{Công trình liên quan (Related Work)}
+
+Các mô hình phát hiện đối tượng hiện đại dựa trên mạng nơ-ron tích chập được chia thành hai hướng tiếp cận chính. \textbf{Hướng hai giai đoạn (Two-stage)} tiêu biểu bởi Faster R-CNN \citep{ren2015faster} sử dụng mạng sinh đề xuất vùng (RPN) để lọc các vùng có khả năng chứa vật thể trước khi trích xuất đặc trưng qua RoIAlign để phân loại và tinh chỉnh hộp bao. Để khắc phục hạn chế mất chi tiết không gian của các tầng sâu trên mạng xương sống ResNet \citep{he2016resnet}, mạng kim tự tháp đặc trưng (FPN) \citep{lin2017fpn} kết hợp đường truyền ngữ nghĩa từ trên xuống (top-down) với kết nối ngang tới các tầng nông độ phân giải cao, giúp cải thiện rõ rệt khả năng bắt vật thể nhỏ trên chuẩn COCO \citep{lin2014coco}.
+
+\textbf{Hướng một giai đoạn (One-stage)} khởi đầu từ YOLO \citep{redmon2016you} quy bài toán phát hiện về một mạng hồi quy duy nhất đi qua ảnh một lần, mang lại tốc độ thời gian thực vượt trội. Phiên bản hiện đại YOLOv8 \citep{jocher2023ultralytics} thay thế cơ chế neo cố định bằng thiết kế không neo (anchor-free), tách riêng nhánh phân loại và hồi quy (decoupled head), đồng thời sử dụng kiến trúc PAN-FPN kết hợp gán nhãn động nhằm cân bằng giữa tốc độ và độ chính xác đa tỉ lệ. Đối với bài toán mất cân bằng lớp trong dữ liệu phát hiện đối tượng, phương pháp lấy mẫu lặp theo tần suất nghịch đảo (Repeat Factor Sampling -- RFS) được đề xuất trên tập LVIS \citep{gupta2019lvis} nhằm tăng tần suất xuất hiện của các lớp hiếm trong mỗi chu kỳ huấn luyện. \needconfirm{Kiểm tra và bổ sung trích dẫn bài báo gốc cho kỹ thuật cắt mảnh SAHI nếu nhóm đã đọc trực tiếp tài liệu gốc để tuân thủ quy định chỉ trích dẫn tài liệu đã đọc.}
+
+% ------------------------------------------------
+% 4. METHOD
+% ------------------------------------------------
+
+\section{Phương pháp (Method)}
+
+\subsection{Kiến trúc hai mô hình đối sánh}
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=0.45cm and 0.55cm,
+    box/.style={draw, rounded corners=2pt, minimum height=0.72cm, align=center, font=\footnotesize, fill=blue!5},
+    ybox/.style={draw, rounded corners=2pt, minimum height=0.72cm, align=center, font=\footnotesize, fill=green!6},
+    omod/.style={draw, dashed, rounded corners=2pt, minimum height=0.72cm, align=center, font=\footnotesize, fill=orange!10},
+    arr/.style={-{Stealth[length=2mm]}, thick}
+]
+% Faster R-CNN row
+\node[box] (in1) {Ảnh $1622\times 626$\\(hoặc ROI video)};
+\node[omod, right=of in1] (aug1) {Safe Aug\\(\textit{No Flip})};
+\node[box, right=of aug1] (bb1) {ResNet50 + FPN\\(\texttt{trainable=3})};
+\node[omod, right=of bb1] (rpn1) {RPN\\Anchors $8..128$ px};
+\node[box, right=of rpn1] (roi1) {RoIAlign +\\FastRCNN Head};
+\node[box, right=of roi1] (out1) {7 lớp + Box\\+ \textit{IoU Tracker}};
+
+\draw[arr] (in1) -- (aug1);
+\draw[arr] (aug1) -- (bb1);
+\draw[arr] (bb1) -- (rpn1);
+\draw[arr] (rpn1) -- (roi1);
+\draw[arr] (roi1) -- (out1);
+
+\node[above=0.05cm of bb1, font=\footnotesize\bfseries] {(a) Luồng Two-Stage: Faster R-CNN ResNet50-FPN (cải tiến cho biển nhỏ)};
+
+% YOLOv8 row
+\node[ybox, below=1.05cm of in1] (in2) {Ảnh gốc /\\Tiles $640\times 640$};
+\node[omod, right=of in2] (rfs2) {RFS / \texttt{cls\_pw}\\(\textit{Thử nghiệm})};
+\node[ybox, right=of rfs2] (bb2) {CSPDarknet\\(C2f + SPPF)};
+\node[ybox, right=of bb2] (nk2) {PAN-FPN\\(P3, P4, P5)};
+\node[ybox, right=of nk2] (hd2) {Decoupled Head\\(Anchor-free)};
+\node[omod, right=of hd2] (out2) {SAHI Merge\\+ Class NMS};
+
+\draw[arr] (in2) -- (rfs2);
+\draw[arr] (rfs2) -- (bb2);
+\draw[arr] (bb2) -- (nk2);
+\draw[arr] (nk2) -- (hd2);
+\draw[arr] (hd2) -- (out2);
+
+\node[above=0.05cm of bb2, font=\footnotesize\bfseries] {(b) Luồng One-Stage: YOLOv8s (mở rộng độ phân giải, Tiling+SAHI và cân bằng lớp)};
+\end{tikzpicture}
+\caption{Sơ đồ kiến trúc tổng thể hai luồng mô hình so sánh. Các khối nét đứt thể hiện thành phần tùy biến, mở rộng và tiền/hậu xử lý do nhóm thiết kế cho đặc thù biển báo siêu nhỏ Việt Nam.}
+\label{fig:arch}
+\end{figure*}
+
+Hình~\ref{fig:arch} minh họa hai kiến trúc đối sánh được nhóm triển khai từ trọng số tiền huấn luyện trên COCO:
+
+\paragraph{Faster R-CNN ResNet50-FPN.}
+Mô hình sử dụng xương sống ResNet-50 kết hợp FPN tạo các bản đồ đặc trưng P2--P5 (và P6 cho RPN) với 256 kênh. Thay cho cấu hình mặc định chỉ giữ anchor nhỏ nhất $32^2$ pixel (lớn hơn gấp đôi trung vị biển báo 16,5 pixel) và khóa toàn bộ backbone, nhóm mở khóa 3 tầng cuối của ResNet-50 (\texttt{trainable\_layers=3}), thu nhỏ bộ sinh anchor xuống $[8, 16, 32, 64, 128]$ pixel với tỉ lệ khung $[0{,}8;\ 1{,}0;\ 1{,}25]$ sát hình dạng biển báo, đồng thời nâng giới hạn kích thước ảnh lên $\texttt{min\_size}=800, \texttt{max\_size}=1800$ để giữ nguyên độ phân giải gốc $1622 \times 626$. Trong tăng cường dữ liệu, nhóm áp dụng biến đổi độ sáng/tương phản nhẹ (\textit{Safe Augmentation}: $\alpha \in [0{,}85; 1{,}15]$, $\beta \in [-15; 15]$) và loại bỏ hoàn toàn lật ngang nhằm tránh làm sai ngữ nghĩa biển báo chỉ hướng.
+
+\paragraph{YOLOv8s và mở rộng Tiling/SAHI.}
+YOLOv8s sử dụng xương sống CSPDarknet với khối C2f và SPPF, phần cổ PAN-FPN xuất đặc trưng tại ba mức stride 8, 16, 32 (P3--P5), đi qua đầu dự đoán tách rời không neo trực tiếp hồi quy khoảng cách $(l, t, r, b)$ từ tâm ô lưới. Do ở độ phân giải chuẩn $\texttt{imgsz}=640$, 68,9\% biển báo co về dưới 10 pixel (nhỏ hơn một ô lưới ở P3), nhóm khảo sát ba hướng: (i) tăng đầu vào lên $\texttt{imgsz}=1280$; (ii) cắt mảnh huấn luyện (\textit{Tiling}) thành các ô $640 \times 640$ chồng lấp 20\% (chỉ giữ hộp có tỉ lệ diện tích nằm trong ô $\ge 0{,}6$ và giữ ngẫu nhiên 15\% ô nền trống); và (iii) suy luận cắt mảnh (SAHI) kết hợp dự đoán toàn ảnh rồi hợp nhất bằng NMS theo từng lớp (\texttt{agnostic\_nms=False}, $\text{IoU}=0{,}65$). Ngoài ra, nhóm đánh giá hai kỹ thuật xử lý mất cân bằng lớp trên cấu hình $\texttt{imgsz}=1280$: RFS ở cấp độ dữ liệu ($r_c = \max(1, \sqrt{\tau / f_c})$ với $\tau = 0{,}3$) và trọng số lớp trong hàm loss (\texttt{cls\_pw}$=0{,}5$, trọng số $w_c \propto (1/N_c)^{0{,}5}$).
+
+\subsection{Hàm mất mát (Loss Functions)}
+
+\paragraph{Faster R-CNN.}
+Mô hình tối ưu tổng hợp bốn thành phần mất mát đa nhiệm ở cả hai giai đoạn \citep{ren2015faster}:
+\begin{equation}
+\mathcal{L}_{\text{FRCNN}} = \mathcal{L}_{\text{rpn\_cls}} + \mathcal{L}_{\text{rpn\_reg}} + \mathcal{L}_{\text{roi\_cls}} + \mathcal{L}_{\text{roi\_reg}},
+\end{equation}
+trong đó $\mathcal{L}_{\text{rpn\_cls}}$ là Binary Cross-Entropy phân biệt tiền cảnh/nền tại RPN, $\mathcal{L}_{\text{roi\_cls}}$ là Cross-Entropy đa lớp cho $K+1=8$ lớp (gồm lớp nền), còn $\mathcal{L}_{\text{rpn\_reg}}$ và $\mathcal{L}_{\text{roi\_reg}}$ đều sử dụng Smooth $L_1$ loss để hồi quy độ lệch tọa độ hộp bao.
+
+\paragraph{YOLOv8s.}
+YOLOv8 sử dụng chiến lược gán nhãn động \textit{Task-Aligned Assigner} theo điểm $t = s^\alpha \cdot \text{IoU}^\beta$ và tối ưu tổng ba thành phần mất mát:
+\begin{equation}
+\mathcal{L}_{\text{YOLO}} = \lambda_{\text{box}}\mathcal{L}_{\text{CIoU}} + \lambda_{\text{cls}}\mathcal{L}_{\text{BCE}} + \lambda_{\text{dfl}}\mathcal{L}_{\text{DFL}},
+\end{equation}
+trong đó $\mathcal{L}_{\text{CIoU}}$ là Complete IoU loss xét diện tích chồng lấp, khoảng cách tâm và tỉ lệ khung hình; $\mathcal{L}_{\text{DFL}}$ (Distribution Focal Loss) học phân phối rời rạc của vị trí biên hộp bao; và $\mathcal{L}_{\text{BCE}}$ là Binary Cross-Entropy đa nhãn cho phân loại (được nhân thêm hệ số $w_c$ trong thí nghiệm \texttt{imb\_clspw}).
+
+\subsection{Phân định mã nguồn tự cài đặt và thư viện}
+
+Để đảm bảo tính minh bạch học thuật, Bảng~\ref{tab:impl} phân tách rõ thành phần dùng thư viện/mô hình sẵn có và phần mã nguồn do nhóm tự thiết kế, cài đặt.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{p{2.3cm}p{4.8cm}}
+\toprule
+\textbf{Hạng mục} & \textbf{Chi tiết triển khai} \\
+\midrule
+Thư viện \& Mô hình sẵn & \texttt{torchvision} (\texttt{fasterrcnn\_resnet50\_fpn}, trọng số \texttt{COCO\_V1}); \texttt{ultralytics} (\texttt{YOLOv8s} pretrained COCO); \texttt{pycocotools}; \texttt{OpenCV}; \texttt{ONNX Runtime}. \\
+\midrule
+Dữ liệu \& Đánh giá (Nhóm tự cài) & \texttt{dedup\_boxes.py} (Union-Find gộp box trùng); \texttt{make\_split.py} \& \texttt{make\_leak\_splits.py} (chia tập theo \texttt{street\_id} + phân tầng); \texttt{evaluate.py}, \texttt{analyze\_errors.py}, \texttt{bootstrap\_ap.py}. \\
+\midrule
+Huấn luyện \& Mở rộng (Nhóm tự cài) & Modular YAML config, \texttt{train.py}, \texttt{models.py}, \texttt{dataset.py} (Safe Aug) cho Faster R-CNN; \texttt{tile\_yolo\_dataset.py}, \texttt{oversample\_yolo.py}, hàm cắt/gộp SAHI trong \texttt{predict\_yolo.py}. \\
+\midrule
+Demo \& Telemetry (Nhóm tự cài) & Package \texttt{streaming/}: pipeline suy luận đa backend (PyTorch FP16/ONNX/YOLO), cắt ROI (\texttt{hood-cut}, \texttt{right}), bộ bám đuôi IoU, bộ thu thập latency (\texttt{mean/p50/p95}), giả lập RTSP. \\
+\bottomrule
+\end{tabular}
+\caption{Phân định phần thư viện có sẵn và phần mã nguồn do nhóm tự cài đặt.}
+\label{tab:impl}
+\end{table}
+
+% ------------------------------------------------
+% 5. EXPERIMENTS
+% ------------------------------------------------
+
+\section{Thực nghiệm (Experiments)}
+
+\subsection{Dữ liệu, làm sạch và chia tập chống rò rỉ}
+
+Bộ dữ liệu \textit{Zalo AI Challenge 2020} \citep{zalo2020traffic} gồm 4.500 ảnh có nhãn công khai ($1622 \times 626$, 7 lớp). Kiểm tra trực quan và phân tích định lượng cho thấy 1.923 hộp trong tổng số 11.000 hộp gốc (17,5\%, trên 747 ảnh) là nhãn lặp 2--6 lần cho cùng một biển báo vật lý. Vì mỗi biển chỉ khớp tối đa một dự đoán khi chấm điểm, việc giữ nguyên nhãn lặp sẽ kéo recall trần trên tập test xuống còn khoảng 77\% ngay cả với mô hình hoàn hảo. Nhóm dùng thuật toán Union-Find gộp các hộp cùng lớp có $\text{IoU} \ge 0{,}45$ thành hộp trung bình, thu được 9.077 hộp sạch (Bảng~\ref{tab:eda}). Trung vị cạnh hộp ($\sqrt{wh}$) trên ảnh gốc là 16,5 pixel ($p_{10}=6{,}9$, $p_{90}=51{,}0$); 77,6\% thuộc nhóm nhỏ ($<32^2$ pixel) và tỉ lệ mất cân bằng giữa lớp nhiều nhất/ít nhất là 4,8 lần.
 
 \begin{table}[t]
 \centering
@@ -73,82 +201,200 @@ Kiểm tra trực quan cho thấy 1.923 box (17,5\% trên tổng 11.000 box gố
 \toprule
 \textbf{Lớp} & \textbf{Số hộp} & \textbf{Tỉ lệ (\%)} & \textbf{Hộp nhỏ (\%)} \\
 \midrule
-Cấm ngược chiều  & 1.134 & 12,5 & 90,5 \\
-Cấm dừng và đỗ   & 1.945 & 21,4 & 71,0 \\
-Cấm rẽ           &   489 &  5,4 & 67,7 \\
-Giới hạn tốc độ  &   801 &  8,8 & 77,8 \\
-Cấm còn lại      & 1.544 & 17,0 & 76,2 \\
 Nguy hiểm        & 2.329 & 25,7 & 77,2 \\
+Cấm dừng và đỗ   & 1.945 & 21,4 & 71,0 \\
+Cấm còn lại      & 1.544 & 17,0 & 76,2 \\
+Cấm ngược chiều  & 1.134 & 12,5 & 90,5 \\
 Hiệu lệnh        &   835 &  9,2 & 85,3 \\
+Giới hạn tốc độ  &   801 &  8,8 & 77,8 \\
+Cấm rẽ           &   489 &  5,4 & 67,7 \\
 \midrule
-\textbf{Tổng}    & 9.077 & 100,0 & 77,6 \\
+\textbf{Tổng}    & \textbf{9.077} & \textbf{100,0} & \textbf{77,6} \\
 \bottomrule
 \end{tabular}
-\caption{Thống kê dữ liệu sau khi làm sạch box trùng. Hộp nhỏ là hộp có diện tích $< 32^2$ pixel (chuẩn COCO).}
+\caption{Thống kê bộ dữ liệu sau khi gộp hộp trùng lặp ($\text{IoU} \ge 0{,}45$). Hộp nhỏ có diện tích $<32^2$ pixel.}
 \label{tab:eda}
 \end{table}
 
-\paragraph{Đặc điểm khám phá (EDA).}
-Bảng~\ref{tab:eda} thể hiện hai thách thức lớn nhất của dữ liệu:
+Nhằm ngăn hiện tượng rò rỉ các khung hình liên tiếp trên cùng một đoạn đường, nhóm gom cụm theo trường \texttt{street\_id} và phân tầng theo lớp hiếm nhất trong cụm, thu được: \textbf{train} 2.933 ảnh / 5.693 hộp (65,2\%), \textbf{val} 696 ảnh / 1.636 hộp (15,5\%) và \textbf{test} 871 ảnh / 1.748 hộp (19,4\%).
+
+\paragraph{Kiểm chứng rò rỉ dữ liệu.}
+Để định lượng tác động của cách chia tập, nhóm chia lại tập \texttt{train} (2.933 ảnh, 28 tuyến đường) thành $\text{train}'$ (1.994 ảnh) và $\text{val}'$ (939 ảnh) theo hai cách: \texttt{random} (ngẫu nhiên từng ảnh, 88,1\% ảnh $\text{val}'$ có khung hình liền kề trong $\text{train}'$) và \texttt{street} (tách hẳn 23/5 tuyến đường, 0\% trùng đường), rồi huấn luyện YOLOv8n ($\texttt{imgsz}=1280$, 50 epoch, \texttt{seed}=0) và chấm trên cùng một tập kiểm tra 5 tuyến đường mới (\texttt{splits/val.json}, 696 ảnh). Kết quả (Bảng~\ref{tab:leak}) chứng minh chia ngẫu nhiên thổi phồng kết quả $\text{val}'$ lên \textbf{+5,7 điểm} mAP@0.5 so với khả năng tổng quát hóa thực tế trên đường mới (78,5\% so với 72,8\%), khẳng định chia theo \texttt{street\_id} là bắt buộc.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+\multirow{2}{*}{\textbf{Cách chia}} & \multicolumn{2}{c}{\textbf{Trên $\text{val}'$}} & \multicolumn{2}{c}{\textbf{Đường mới}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & \textbf{AP50} & \textbf{AP} & \textbf{AP50} & \textbf{AP} \\
+\midrule
+\texttt{random} & 78,5 & 50,7 & 72,8 & 48,5 \\
+\texttt{street} & 62,9 & 39,9 & 69,9 & 47,0 \\
+\bottomrule
+\end{tabular}
+\caption{Thí nghiệm rò rỉ dữ liệu với YOLOv8n ($\texttt{imgsz}=1280$). AP ký hiệu mAP@0.5:0.95.}
+\label{tab:leak}
+\end{table}
+
+\subsection{Thiết lập huấn luyện và Chỉ số đánh giá}
+
+\paragraph{Cấu hình Faster R-CNN.}
+Ba cấu hình tuần tự (\texttt{exp01\_baseline}, \texttt{exp02\_fpn\_small\_anchor}, \texttt{exp03\_fpn\_aug}) được huấn luyện trên GPU NVIDIA Tesla T4 (Kaggle, AMP FP16), 30 epochs, batch size 8, tối ưu hóa SGD ($\text{lr}=0{,}0025$, $\text{momentum}=0{,}9$, $\text{weight\_decay}=5\times 10^{-4}$), lịch học \texttt{MultiStepLR} giảm $\times 0{,}1$ tại epoch 20 và 26, gradient clipping 1,0. Thời gian huấn luyện mỗi lượt: \needconfirm{Bổ sung thời gian huấn luyện thực tế (phút/giờ) và giá trị seed của các lượt Faster R-CNN từ log W\&B.}
+
+\paragraph{Cấu hình YOLOv8s.}
+Các mô hình YOLOv8s sử dụng \texttt{ultralytics==8.4.204} trên GPU Tesla T4, huấn luyện 50 epochs (early stopping \texttt{patience}=15, \texttt{seed}=0), batch size 16 ($\texttt{imgsz}=640$) hoặc 8 ($\texttt{imgsz}=1280$), \texttt{fliplr}=0,5, \texttt{flipud}=0,0, \texttt{mosaic}=1,0 (tắt ở 10 epoch cuối), NMS IoU 0,65 theo từng lớp. Hai thí nghiệm cân bằng lớp (\texttt{imb\_rfs}, \texttt{imb\_clspw}) kế thừa nguyên bản siêu tham số của \texttt{yolov8s\_1280}. Thời gian huấn luyện: \needconfirm{Bổ sung thời gian huấn luyện thực tế (giờ/phút) cho các cấu hình YOLOv8s và xác nhận có huấn luyện kiến trúc \texttt{yolov8s-p2} hay không.}
+
+\paragraph{Quy chuẩn đánh giá.}
+Mọi mô hình xuất dự đoán ra định dạng COCO JSON trên ảnh gốc và đánh giá qua một script thống nhất dùng \texttt{pycocotools} (mAP@0.5, mAP@0.5:0.95, $\text{AP}_{\text{small}}$, $\text{AP}_{\text{medium}}$, $\text{AP}_{\text{large}}$). Lưu ý rằng YOLOv8 xuất ở ngưỡng tin cậy $\texttt{conf}=0{,}001$, trong khi các file dự đoán validation của Faster R-CNN sử dụng ngưỡng $\texttt{conf}=0{,}05$ nên phần đuôi đường cong Precision--Recall có thể bị cắt nhẹ. Phép đo tốc độ video thực hiện trên cùng đoạn dashcam $1280 \times 720$ @ 30 FPS dài 5.400 khung hình (bỏ 10 khung warmup, đo 5.390 khung) trên Tesla T4, FP16, $\texttt{batch}=1$, bật tracking và xuất video.
+
+\subsection{Kết quả định lượng tổng hợp}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Họ mô hình} & \textbf{Cấu hình thí nghiệm} & \textbf{mAP@0.5} & \textbf{mAP@0.5:0.95} & \textbf{$\text{AP}_{\text{small}}$} & \textbf{$\text{AP}_{\text{medium}}$} & \textbf{$\text{AP}_{\text{large}}$} \\
+\midrule
+\multirow{6}{*}{YOLOv8s}
+ & \texttt{yolov8s\_640} (baseline)        & 61,7 & 39,8 & 29,8 & 70,5 & 54,5 \\
+ & \texttt{yolov8s\_640\_sahi}            & 78,1 & 45,2 & 37,3 & 70,8 & 53,0 \\
+ & \texttt{yolov8s\_1280}                  & 82,2 & 56,6 & 50,2 & \textbf{76,1} & 53,9 \\
+ & \texttt{yolov8s\_tiled\_640\_sahi}     & \textbf{83,9} & \textbf{57,9} & \textbf{52,3} & 75,2 & \textbf{54,9} \\
+ & \texttt{imb\_rfs} (oversampling)        & 81,0 & 55,8 & 49,6 & 74,4 & 51,1 \\
+ & \texttt{imb\_clspw} ($\texttt{cls\_pw}=0{,}5$) & 81,1 & 55,7 & 49,7 & 74,7 & 49,4 \\
+\midrule
+\multirow{3}{*}{Faster R-CNN}
+ & \texttt{exp01\_baseline}                & 64,8 & 41,6 & 33,5 & 68,1 & 50,4 \\
+ & \texttt{exp02\_fpn\_small\_anchor}      & 72,5 & 47,7 & 40,3 & 71,2 & 51,9 \\
+ & \texttt{exp03\_fpn\_aug}                & \textbf{75,2} & \textbf{48,6} & \textbf{41,3} & \textbf{71,8} & \textbf{53,4} \\
+\bottomrule
+\end{tabular}
+\caption{Kết quả tổng hợp trên tập validation (696 ảnh, 1.636 hộp sạch). In đậm là giá trị cao nhất trong từng họ.}
+\label{tab:val_results}
+\end{table*}
+
+Bảng~\ref{tab:val_results} trình bày kết quả đối sánh trên tập validation. Tại mức baseline kích thước chuẩn, Faster R-CNN \texttt{exp01} vượt \texttt{yolov8s\_640} ở cả mAP@0.5 (64,8\% so với 61,7\%) và $\text{AP}_{\text{small}}$ (33,5\% so với 29,8\%) nhờ đầu ra FPN xuống tới P2 (stride 4) so với P3 (stride 8) của YOLO. Tuy nhiên, khi bảo toàn thông tin không gian bằng tăng độ phân giải ($\texttt{imgsz}=1280$) hoặc cắt mảnh ảnh kết hợp SAHI, YOLOv8s bứt phá mạnh mẽ đạt đỉnh 83,9\% mAP@0.5 và 52,3\% $\text{AP}_{\text{small}}$, vượt mức tối đa của Faster R-CNN \texttt{exp03} (75,2\% mAP@0.5 và 41,3\% $\text{AP}_{\text{small}}$).
+
+Trên tập \textbf{test} độc lập (871 ảnh, 1.748 hộp), cấu hình \texttt{exp03\_fpn\_aug} đạt mAP@0.5 = 69,3\%, mAP@0.5:0.95 = 41,8\%, $\text{AP}_{\text{small}}$ = 35,9\%, $\text{AP}_{\text{medium}}$ = 71,4\% và $\text{AP}_{\text{large}}$ = 72,3\%. \needconfirm{Bổ sung kết quả đánh giá trên tập \texttt{test.json} cho cấu hình \texttt{yolov8s\_1280}, \texttt{yolov8s\_tiled\_640\_sahi} và \texttt{exp01\_baseline} (nếu chạy đánh giá cuối trên tập test) để hoàn chỉnh bảng đối chứng Test.}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Cấu hình (Tesla T4, FP16)} & \textbf{Inf FPS} & \textbf{Pipe FPS} & \textbf{Mean (ms)} & \textbf{P95 (ms)} \\
+\midrule
+YOLOv8s ($\texttt{imgsz}=1280$) & \textbf{71,23} & \textbf{46,28} & \textbf{21,61} & \textbf{23,35} \\
+Faster R-CNN \texttt{exp03} (ROI) & 12,19 & 11,15 & 89,71 & 93,59 \\
+\bottomrule
+\end{tabular}
+\caption{Hiệu năng tốc độ và độ trễ pipeline (Mean, P95 của \texttt{pipeline\_ms}) trên 5.390 khung hình video $1280\times 720$.}
+\label{tab:fps}
+\end{table}
+
+Về tốc độ xử lý (Bảng~\ref{tab:fps}), YOLOv8s ở $\texttt{imgsz}=1280$ đạt 71,23 FPS suy luận và 46,28 FPS toàn trình (đã gồm đọc khung hình, tracking và ghi video), vượt chuẩn thời gian thực 30 FPS với độ trễ ổn định ($\text{P95}=23{,}35$ ms). Đối với Faster R-CNN \texttt{exp03}, áp dụng lộ trình tối ưu gồm FP16 AMP và cắt vùng quan tâm loại bỏ nắp ca-pô/lề trái giúp đẩy tốc độ suy luận từ 0,21 FPS (CPU FP32) và 4,93 FPS (GPU FP32 toàn ảnh) lên 12,19 FPS (11,15 FPS toàn trình trên 5.390 khung hình; 13,11 FPS trên thử nghiệm 300 khung hình với ROI lề phải). Tuy nhanh hơn gần 60 lần so với CPU, Faster R-CNN vẫn chưa đạt ngưỡng 30 FPS do luồng xử lý hai giai đoạn phụ thuộc số đề xuất động của RPN và phép toán \texttt{RoIAlign} khiến mô hình khó biên dịch trực tiếp thành TensorRT engine tĩnh như YOLO.
+
+% ------------------------------------------------
+% 6. ANALYSIS
+% ------------------------------------------------
+
+\section{Phân tích và Đánh giá (Analysis)}
+
+\subsection{Nghiên cứu cắt bỏ (Ablation Study)}
+
+\paragraph{Chuỗi cải tiến Faster R-CNN.}
+Từ \texttt{exp01} sang \texttt{exp02} (đồng thời mở khóa 3 tầng backbone, thu nhỏ anchor xuống 8--128 px, đổi tỉ lệ khung 0,8--1,25 và tăng \texttt{max\_size}=1800), mAP@0.5:0.95 tăng +6,17 điểm và $\text{AP}_{\text{small}}$ tăng +6,85 điểm (trên số liệu chưa làm tròn). Bổ sung \textit{Safe Augmentation} ở \texttt{exp03} tiếp tục tăng thêm +0,84 điểm mAP@0.5:0.95 và +2,75 điểm mAP@0.5, đưa tổng mức cải thiện đạt +7,01 điểm mAP@0.5:0.95 và +7,83 điểm $\text{AP}_{\text{small}}$. Do chuyển từ \texttt{exp01} sang \texttt{exp02} thay đổi đồng thời nhiều yếu tố và mỗi cấu hình mới chạy 1 lượt, các mức tăng này phản ánh hiệu quả tổng hợp của nhóm cấu hình hướng tới vật thể nhỏ hơn là tác động cô lập từng siêu tham số.
+
+\paragraph{Độ phân giải và Tiling/SAHI trên YOLOv8s.}
+Giữ nguyên kiến trúc, chỉ nâng $\texttt{imgsz}$ từ 640 lên 1280 giúp $\text{AP}_{\text{small}}$ tăng vọt +20,4 điểm (29,8\% $\to$ 50,2\%) trong khi $\text{AP}_{\text{medium}}$ chỉ tăng 5,6 điểm, chứng minh nút thắt cổ chai lớn nhất nằm ở mất thông tin không gian khi thu nhỏ ảnh. Kết hợp huấn luyện cắt mảnh và suy luận SAHI tăng tiếp $\text{AP}_{\text{small}}$ lên 52,3\%, nhưng làm số dự đoán lặp tăng vọt từ 17 lên 71 hộp do bước hậu xử lý chưa gộp hết các hộp ở vùng giao nhau giữa các mảnh cắt (và chưa được đo FPS tương ứng trên pipeline video).
+
+\paragraph{Tác động của cân bằng lớp và kiểm định Bootstrap.}
+Bảng~\ref{tab:imbalance} tổng hợp kết quả cân bằng lớp kèm kiểm định \textit{paired bootstrap} (1.000 lần lấy mẫu lại 696 ảnh val, khoảng tin cậy 95\%). Cả \texttt{imb\_rfs} và \texttt{imb\_clspw} đều làm mAP@0.5 giảm nhẹ khoảng 1,1--1,2 điểm (không có ý nghĩa thống kê) và không cải thiện được nhóm lớp hiếm. Đáng chú ý, \texttt{imb\_clspw} làm giảm chắc chắn AP50 của \textit{Giới hạn tốc độ} tới $-6{,}1$ điểm ($[-10{,}2; -1{,}6]$). Nguyên nhân nằm ở bốn điểm: (1) trọng số chỉ dịch ranh giới quyết định chứ không giúp nhận diện nội dung bên trong biển nhỏ: số dự đoán \textit{Cấm rẽ} tăng làm sai lớp của nó giảm (14,3\% $\to$ 10,2\%) nhưng kéo nhầm các biển \textit{Giới hạn tốc độ} sang \textit{Cấm rẽ}; (2) RFS lặp cả lớp phổ biến gây nhầm vì 49\% ảnh chứa \textit{Giới hạn tốc độ} có kèm \textit{Cấm còn lại}; (3) nguồn lỗi chính của baseline là bỏ sót biển nhỏ (16,7\% toàn tập, 73,7\% ở nhóm $<8$ px), không phải sai lớp (3,2\%); và (4) tỉ lệ lệch 4,4 lần trên tập train chưa phải bài toán đuôi dài cực đoan.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Cấu hình} & \textbf{mAP@0.5} & \textbf{Cấm rẽ} & \textbf{Tốc độ} \\
+\midrule
+\texttt{yolov8s\_1280} & 82,2 & 75,0 & 77,7 \\
+\texttt{imb\_rfs} & 81,0 {\scriptsize $[-2{,}6,+0{,}4]$} & 71,4 {\scriptsize $[-10{,}2,+2{,}7]$} & 73,1 {\scriptsize $[-9{,}4,+0{,}2]$} \\
+\texttt{imb\_clspw} & 81,1 {\scriptsize $[-2{,}5,+0{,}2]$} & 74,9 {\scriptsize $[-5{,}4,+4{,}8]$} & \textbf{71,6} {\scriptsize $[-10{,}2,-1{,}6]$} \\
+\bottomrule
+\end{tabular}
+\caption{So sánh AP50 và chênh lệch bootstrap 95\% CI trong thí nghiệm mất cân bằng lớp. In đậm là mức giảm có ý nghĩa thống kê.}
+\label{tab:imbalance}
+\end{table}
+
+\subsection{Phân tích lỗi chuyên sâu}
+
+\paragraph{Phân tích theo kích thước và cụm biển.}
+Trong hai họ mô hình, lỗi bỏ sót chiếm áp đảo so với lỗi sai lớp (32,8\% so với 4,9\% ở \texttt{yolov8s\_640}; 27,9\% so với 3,7\% ở \texttt{exp03}). Trên nhóm biển siêu nhỏ $<8$ px (167 mẫu), recall của \texttt{yolov8s\_640} chỉ đạt 1,2\%, \texttt{exp01} đạt 3,6\%, và chỉ tăng lên 25,1\% ở \texttt{yolov8s\_1280} và 15,6\% ở \texttt{exp03}. Ở nhóm 8--16 px (543 mẫu), \texttt{yolov8s\_1280} đạt recall 74,6\% vượt trội so với 55,8\% của \texttt{exp03}. Với 46\% biển đứng trong cụm trên val, khi kiểm soát cùng dải kích thước, recall giữa biển đứng cụm và đứng riêng gần như bằng nhau (đều đạt 68,4\% ở \texttt{exp03}; 79,4\% so với 80,6\% ở \texttt{yolov8s\_1280}), khẳng định chiến lược giữ NMS theo từng lớp ($\text{IoU}=0{,}65$) không xóa nhầm biển sát nhau.
+
+\paragraph{Nhầm lẫn giữa nhóm biển tròn viền đỏ.}
+Trái với dự đoán ban đầu, \textit{Cấm ngược chiều} tuy có 92\% hộp nhỏ nhưng đạt AP50 rất cao (89,2\% ở YOLO 1280; 79,8\% ở FRCNN \texttt{exp03}) nhờ nền đỏ đặc trưng khác biệt. Ngược lại, bộ ba biển tròn nền trắng viền đỏ (\textit{Cấm rẽ}, \textit{Giới hạn tốc độ}, \textit{Cấm còn lại}) luôn có AP thấp nhất và chiếm hầu hết lỗi nhầm lớp trên mọi mô hình (Hình~\ref{fig:cm}). Faster R-CNN mắc lỗi nhầm lớp nặng hơn YOLOv8: tại \texttt{exp01}, tới 29,6\% biển \textit{Cấm rẽ} và 24,8\% biển \textit{Giới hạn tốc độ} bị nhận nhầm (chủ yếu sang \textit{Cấm còn lại}); sang \texttt{exp03} các tỉ lệ này giảm xuống còn 17,3\% và 16,3\% nhưng vẫn cao hơn mức 14,3\% và 11,1\% của \texttt{yolov8s\_1280}. Trên video demo, lỗi này biểu hiện thành hiện tượng nhảy nhãn khi biển ở xa ($\sim 8\times 8$ px) và trùng hai \texttt{track\_id} song song trước khi xe tiến lại gần.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\linewidth]{../reports/errors/yolov8s_1280/confusion.png}
+\caption{Ma trận nhầm lẫn trên tập validation của \texttt{yolov8s\_1280}: phần lớn lỗi phân loại tập trung cục bộ ở ba lớp biển tròn viền đỏ.}
+\label{fig:cm}
+\end{figure}
+
+\subsection{Trực quan hóa và Ví dụ đầu ra}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\linewidth]{../reports/errors/bo_sot_mo_hinh_tot_nhat.png}
+\caption{Ví dụ các biển báo $\ge 8$ pixel bị mô hình tốt nhất bỏ sót (chủ yếu do nhòe, bạc màu, ngược sáng nền trời sáng hoặc nhãn gốc bị gán sai lớp).}
+\label{fig:missed}
+\end{figure}
+
+Hình~\ref{fig:missed} minh họa các trường hợp thất bại điển hình của mô hình tốt nhất trên ảnh tĩnh (28/40 mẫu nhỏ $\le 13$ px, mờ nhòe hoặc lẫn vào nền trời sáng). Đối với trực quan hóa khung hình demo trên video và phân tích bản đồ kích hoạt đặc trưng:
+\needconfirm{Bổ sung hình trực quan hóa \textbf{Grad-CAM / Attention Map} và một hình ghép đối chiếu \textbf{ví dụ đầu ra tốt và xấu} (có thể dùng ảnh chụp thực tế từ \texttt{artifacts/verification/verifier/offline-midpoint.jpg} kèm ảnh ví dụ lỗi) để đáp ứng đầy đủ yêu cầu mục Analysis.}
+
+% ------------------------------------------------
+% 7. CONCLUSION
+% ------------------------------------------------
+
+\section{Kết luận (Conclusion)}
+
+Nghiên cứu đã xây dựng quy trình đánh giá chuẩn hóa, chống rò rỉ dữ liệu theo tuyến đường và so sánh thực nghiệm giữa YOLOv8s và Faster R-CNN ResNet50-FPN cho bài toán phát hiện biển báo giao thông nhỏ tại Việt Nam. Kết quả chỉ ra hai kết luận cốt lõi: (1) kích thước vật thể siêu nhỏ là nguyên nhân gây lỗi chủ đạo chứ không phải mất cân bằng lớp, do đó các kỹ thuật bảo toàn độ phân giải (tăng \texttt{imgsz}=1280, thu nhỏ anchor 8--128 px, Tiling+SAHI) mang lại hiệu quả vượt trội so với tái lấy mẫu hay đánh trọng số loss; và (2) \textbf{YOLOv8s ($\texttt{imgsz}=1280$)} đạt sự cân bằng tốt nhất cho triển khai thực tế với 82,2\% mAP@0.5, 50,2\% $\text{AP}_{\text{small}}$ và tốc độ 46,28 FPS toàn trình trên Tesla T4 (FP16), trong khi \texttt{yolov8s\_tiled\_640\_sahi} đạt độ chính xác tĩnh cao nhất (83,9\% mAP@0.5) và Faster R-CNN \texttt{exp03} đạt 75,2\% mAP@0.5 (69,3\% trên test) với tốc độ 11,15 FPS.
+
+\paragraph{Hướng phát triển.}
+Trong tương lai, hệ thống có thể được cải thiện theo ba hướng: (i) tối ưu triển khai TensorRT và lượng tử hóa INT8 cho YOLOv8 nhằm đạt thời gian thực trên thiết bị nhúng; (ii) thiết kế kiến trúc hai bước phân cấp cắt vùng biển tròn viền đỏ để phân loại lại ở độ phân giải cao; và (iii) tích hợp thông tin liên khung hình (temporal tracking/smoothing) để giảm hiện tượng nhảy nhãn trên video thực tế.
+
+% ============================================================
+% CÁC MỤC BẮT BUỘC KHÔNG TÍNH VÀO GIỚI HẠN 8 TRANG
+% ============================================================
+
+\section*{Hạn chế của nghiên cứu (Limitations)}
+
+\paragraph{Giới hạn của dữ liệu.}
+Dữ liệu gốc tồn tại lượng lớn hộp nhãn trùng lặp (17,5\%) và một số nhãn sai lớp giữa các biển tròn viền đỏ. Phần lớn ảnh được chụp vào ban ngày trong điều kiện thời tiết thuận lợi, chưa bao quát tình huống ban đêm, mưa lớn hoặc chói đèn. Ngoài ra, số lượng tuyến đường trong tập validation và test còn hạn chế (ví dụ lớp \textit{Cấm rẽ} chỉ có 98 mẫu trên val khiến khoảng tin cậy bootstrap rộng $\pm 6$ điểm).
+
+\paragraph{Giới hạn của phương pháp.}
+Các cấu hình chính mới được huấn luyện với 1 seed nên chưa lượng hóa được phương sai ngẫu nhiên giữa các lần khởi tạo. Chuỗi thí nghiệm Faster R-CNN (\texttt{exp01}$\to$\texttt{exp02}) thay đổi đồng thời nhiều yếu tố (backbone, anchor, kích thước ảnh), chưa cô lập tác động riêng lẻ từng biến. Suy luận SAHI tuy tăng recall biển nhỏ nhưng làm phát sinh 71 hộp lặp và chưa được benchmark FPS trên luồng video. Bộ bám đuôi IoU chỉ phục vụ trực quan hóa demo, có thể mất ID khi bị che khuất.
+
+\paragraph{Giới hạn của cách đánh giá.}
+Bảng so sánh toàn diện hiện chủ yếu dựa trên tập validation (mới có kết quả test độc lập cho \texttt{exp03\_fpn\_aug}); đồng thời dự đoán validation của Faster R-CNN xuất ở ngưỡng $\texttt{conf}=0{,}05$ thay vì $0{,}001$ như YOLOv8. Trên video demo, việc thiếu nhãn chuẩn khiến nhóm chưa thể đo các chỉ số bám đuôi chuẩn (MOTA/IDF1), và kiểm thử RTSP cục bộ chưa phản ánh đầy đủ độ trễ mạng thực tế.
+
+\section*{Đóng góp của thành viên}
+
 \begin{itemize}
 \itemsep0pt
-\item \textbf{Biển báo siêu nhỏ:} 77,6\% số hộp thuộc nhóm nhỏ (diện tích $< 32^2$). Cạnh hộp ($\sqrt{w \cdot h}$) trên ảnh gốc có trung vị chỉ 16,5 px ($p_{10}=6{,}9$, $p_{90}=51{,}0$). Khi co về kích thước 640 tiêu chuẩn, 68,9\% số hộp có cạnh dưới 10 px.
-\item \textbf{Mất cân bằng lớp:} Lớp nhiều nhất (\textit{Nguy hiểm}) gấp 4,8 lần lớp ít nhất (\textit{Cấm rẽ}).
+\item \textbf{Hoàng Hải Anh (Thành viên A -- \needconfirm{XX\%}):} Phân tích khám phá dữ liệu (EDA), làm sạch 1.923 hộp trùng lặp, thiết kế giao thức chia tập theo \texttt{street\_id} và thí nghiệm kiểm chứng rò rỉ dữ liệu, xây dựng script đánh giá chung \texttt{pycocotools}, phân tích lỗi và thực hiện thí nghiệm cân bằng lớp kèm kiểm định bootstrap.
+\item \textbf{Tạ Mạnh Cường (Thành viên B -- \needconfirm{XX\%}):} Thiết lập mã nguồn huấn luyện và theo dõi thực nghiệm YOLOv8s (\texttt{imgsz}=640/1280) qua Weights \& Biases, quản trị kho mã nguồn GitHub, triển khai phần mở rộng Tiling và suy luận SAHI, đo benchmark tốc độ YOLOv8 trên Tesla T4.
+\item \textbf{Phạm Thế Hưng (Thành viên C -- \needconfirm{XX\%}):} Xây dựng pipeline huấn luyện và hệ thống cấu hình modular YAML cho Faster R-CNN (\texttt{exp01}--\texttt{exp03}), tinh chỉnh anchor nhỏ và Safe Augmentation, thiết kế kiến trúc module \texttt{streaming/} (demo video, ROI optimization, ONNX, RTSP), thực hiện benchmark hiệu năng và chủ biên báo cáo chuẩn ACL.
 \end{itemize}
 
-% ------------------------------------------------
-% 3. BASELINES AND EXTENSIONS
-% ------------------------------------------------
+\section*{Khai báo công cụ AI}
 
-\section{Mô hình baseline và Hướng mở rộng}
-
-Nhóm chọn đại diện tiêu biểu của hai trường phái phát hiện đối tượng, khởi tạo với trọng số tiền huấn luyện COCO \citep{lin2014coco}:
-
-\begin{itemize}
-\itemsep0pt
-\item \textbf{YOLOv8s} \citep{jocher2023ultralytics}: Mô hình một giai đoạn (one-stage detector) tối ưu về tốc độ suy luận, chạy ở kích thước đầu vào $\texttt{imgsz}=640$.
-\item \textbf{Faster R-CNN ResNet50-FPN} \citep{ren2015faster,lin2017fpn}: Mô hình hai giai đoạn (two-stage detector) với cơ chế sinh đề xuất vùng (RPN) và mạng kim tự tháp đặc trưng (FPN).
-\end{itemize}
-
-\paragraph{Các hướng mở rộng dự kiến:}
-Dựa trên đặc tính dữ liệu, nhóm triển khai 3 hướng:
-(1) Khắc phục mất cân bằng lớp qua Focal Loss và Class Weights;
-(2) Tăng cường phát hiện biển nhỏ cho YOLOv8 thông qua kỹ thuật cắt lát ảnh (Tiling) và SAHI khi suy luận;
-(3) Tinh chỉnh tỉ lệ anchor nhỏ hơn trên Faster R-CNN, đo đạc độ trễ/FPS và xây dựng ứng dụng demo phát hiện thời gian thực trên video hành trình.
-
-% ------------------------------------------------
-% 4. EVALUATION
-% ------------------------------------------------
-
-\section{Cách đánh giá}
-
-Cả hai mô hình đều xuất kết quả suy luận ra định dạng JSON chuẩn gồm: \texttt{image\_id}, \texttt{category\_id}, \texttt{bbox} $[x,y,w,h]$ (tọa độ pixel gốc) và \texttt{score}. Nhóm dùng chung một script đánh giá dựa trên \texttt{pycocotools} để đảm bảo tính công bằng và nhất quán tuyệt đối.
-
-Các tiêu chí đánh giá chính:
-\begin{itemize}
-\itemsep0pt
-\item \textbf{Độ chính xác tổng thể:} mAP@0.5 và mAP@0.5:0.95.
-\item \textbf{Khả năng bắt vật thể nhỏ:} AP trên nhóm đối tượng nhỏ ($\text{AP}_{\text{small}}$, diện tích $< 32^2$).
-\item \textbf{Hiệu năng theo lớp:} AP chi tiết cho từng lớp trong 7 lớp.
-\item \textbf{Hiệu năng thực tế:} Tốc độ khung hình (FPS) và độ trễ suy luận (latency) đo trên cùng phần cứng.
-\end{itemize}
-
-% ------------------------------------------------
-% 5. TASK ASSIGNMENT
-% ------------------------------------------------
-
-\section{Phân công và Kế hoạch thực hiện}
-
-Dự án được triển khai trong 5 tuần theo cấu trúc phân công độc lập và kiểm tra chéo:
-
-\begin{itemize}
-\itemsep0pt
-\item \textbf{Hoàng Hải Anh (Thành viên A):} Phụ trách dữ liệu, EDA, phân chia tập dữ liệu chống rò rỉ, xây dựng script đánh giá chung bằng \texttt{pycocotools} và phân tích lỗi mô hình. Mở rộng: xử lý mất cân bằng lớp.
-\item \textbf{Tạ Mạnh Cường (Thành viên B):} Thiết lập mã nguồn huấn luyện YOLOv8, quản trị repository GitHub và theo dõi thực nghiệm qua Weights \& Biases. Mở rộng: Tiling ảnh và SAHI.
-\item \textbf{Phạm Thế Hưng (Thành viên C):} Thiết lập mã nguồn huấn luyện Faster R-CNN, quản lý template bài báo ACL, thực hiện so sánh đánh đổi tốc độ -- độ chính xác. Mở rộng: tối ưu hóa thời gian thực và xây dựng demo video hành trình.
-\end{itemize}
-
-Mỗi thành viên độc lập phát triển và commit mã nguồn phần việc của mình trên repository chung của nhóm.
+Nhóm có sử dụng các công cụ AI tạo sinh \needconfirm{Ghi rõ tên công cụ cụ thể đã dùng, ví dụ: ChatGPT / Gemini / GitHub Copilot...} hỗ trợ trong quá trình thực hiện đề tài ở các hạng mục: \needconfirm{Liệt kê cụ thể các việc đã dùng AI, ví dụ: gợi ý tái cấu trúc mã nguồn module \texttt{streaming/}, tra cứu cú pháp thư viện \texttt{torchvision}/\texttt{ultralytics}, hỗ trợ rà soát văn phong và định dạng bảng biểu LaTeX chuẩn ACL}. Mọi đoạn mã, số liệu thực nghiệm và lập luận khoa học trong báo cáo đều đã được các thành viên kiểm chứng trực tiếp và sẵn sàng giải trình trong phần vấn đáp.
 
 % ------------------------------------------------
 % REFERENCES
@@ -156,5 +402,36 @@ Mỗi thành viên độc lập phát triển và commit mã nguồn phần vi�
 
 \bibliography{custom}
 
-\end{document}
+% ------------------------------------------------
+% APPENDIX (Optional, outside 8-page limit)
+% ------------------------------------------------
 
+\appendix
+\section{Chi tiết AP@0.5 theo từng lớp trên tập Validation}
+\label{sec:appendix_perclass}
+
+Bảng~\ref{tab:per_class} cung cấp độ chính xác AP@0.5 chi tiết cho từng loại trong 7 lớp biển báo của các cấu hình tiêu biểu trên tập validation (696 ảnh, 1.636 hộp sạch).
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Lớp biển báo (\% hộp nhỏ)} & \textbf{YOLO 640} & \textbf{YOLO 1280} & \textbf{Tiled+SAHI} & \textbf{FRCNN exp01} & \textbf{FRCNN exp03} \\
+\midrule
+Cấm ngược chiều (92\%)  & 68,2 & 89,2 & 86,4 & 70,4 & 79,8 \\
+Cấm dừng và đỗ (69\%)   & 77,2 & 92,0 & 93,3 & 80,8 & 86,8 \\
+Cấm rẽ (65\%)           & 52,7 & 75,0 & 80,6 & 45,8 & 60,3 \\
+Giới hạn tốc độ (73\%)  & 49,5 & 77,7 & 77,9 & 64,0 & 76,4 \\
+Cấm còn lại (76\%)      & 55,0 & 75,4 & 80,3 & 55,0 & 67,1 \\
+Nguy hiểm (74\%)        & 74,2 & 87,6 & 88,2 & 76,6 & 80,4 \\
+Hiệu lệnh (85\%)        & 54,9 & 78,6 & 80,7 & 61,3 & 75,6 \\
+\midrule
+\textbf{mAP@0.5}        & \textbf{61,7} & \textbf{82,2} & \textbf{83,9} & \textbf{64,8} & \textbf{75,2} \\
+\bottomrule
+\end{tabular}
+\caption{Kết quả AP@0.5 theo từng lớp trên tập validation.}
+\label{tab:per_class}
+\end{table*}
+
+\end{document}
