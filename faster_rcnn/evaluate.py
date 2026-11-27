@@ -1,5 +1,5 @@
 # faster_rcnn/evaluate.py
-"""Inference Faster R-CNN, xuất file prediction COCO JSON và gọi scripts/evaluate.py để chấm mAP.
+"""Inference Faster R-CNN, xuất file prediction COCO JSON và gọi evaluation/evaluate.py để chấm mAP.
 
 Cách chạy:
     # 1. Chấm điểm từ checkpoint model (Inference -> COCO Eval):
@@ -27,7 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from faster_rcnn import config
-from scripts.evaluate import main as run_eval_coco
+from evaluation.evaluate import main as run_eval_coco
 
 try:
     import torch
@@ -257,7 +257,7 @@ def evaluate_coco_metrics(
     import pycocotools.coco as coco_mod
     from pycocotools.cocoeval import COCOeval
 
-    from scripts.evaluate import check_preds
+    from evaluation.evaluate import check_preds
 
     gt = coco_mod.COCO()
     gt.dataset = json.loads(Path(gt_path).read_text(encoding="utf-8"))
@@ -294,7 +294,7 @@ def _invoke_coco_evaluator(
     exp_name: str,
     report_dir: Union[str, Path],
 ) -> None:
-    """Gọi runner đánh giá scripts/evaluate.py một cách an toàn."""
+    """Gọi runner đánh giá evaluation/evaluate.py một cách an toàn."""
     eval_argv = [
         "evaluate.py",
         "--gt", str(gt_path),
@@ -458,7 +458,7 @@ def _evaluate_from_model(args: argparse.Namespace) -> None:
         print("[DRY-RUN] Hoàn tất sanity check.")
         return
 
-    # 3. Chấm điểm COCO: gọi hàm main của scripts/evaluate.py
+    # 3. Chấm điểm COCO: gọi hàm main của evaluation/evaluate.py
     report_dir = cfg["REPORT_EVAL_DIR"]
     _invoke_coco_evaluator(gt_path, pred_path, exp_name, report_dir)
 

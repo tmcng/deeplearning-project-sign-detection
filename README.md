@@ -1,86 +1,127 @@
-﻿# Phát hiện Biển báo Giao thông Việt Nam (Zalo AI Traffic Sign 2020)
+﻿# Phát hiện biển báo giao thông Việt Nam (Zalo AI Traffic Sign 2020)
 
-Kho mã nguồn bài tập lớn môn **Học sâu (Deep Learning)** – Đề tài 1: So sánh và tối ưu hóa mô hình **One-stage (YOLOv8)** và **Two-stage (Faster R-CNN)** cho bài toán phát hiện biển báo giao thông nhỏ trên ảnh camera hành trình Việt Nam.
+Bài tập lớn môn **Học sâu**, Đề tài 1: so sánh và tối ưu mô hình **một giai đoạn (YOLOv8)** và **hai giai đoạn (Faster R-CNN)** cho bài toán phát hiện biển báo giao thông nhỏ trên ảnh camera hành trình Việt Nam (1622×626, 7 lớp).
 
-## Phân công thành viên
+## Kết quả cuối
 
-| Thành viên | Phụ trách chính | Phần mở rộng |
-| :--- | :--- | :--- |
-| **A – Dữ liệu & Đánh giá** | Làm sạch dữ liệu (gộp box trùng), EDA, chia tập theo `street_id`, script đánh giá `pycocotools`, phân tích lỗi | Xử lý mất cân bằng lớp |
-| **B – YOLOv8** | Pipeline YOLOv8 (`imgsz=640/1280`, kiến trúc `P2`), tích hợp Weights & Biases, quản lý repo | Tiling ảnh độ phân giải cao + suy luận cắt mảnh (SAHI) |
-| **C – Faster R-CNN & So sánh** | Faster R-CNN ResNet50-FPN, tinh chỉnh anchor nhỏ, báo cáo ACL, so sánh tốc độ/độ chính xác | Suy luận thời gian thực (real-time) trên video & demo |
+Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô hình chưa từng thấy). Tập test chỉ được chấm **một lần**, cho các mô hình cuối.
 
----
+| Mô hình | mAP@0.5 val | mAP@0.5 test | mAP@0.5:0.95 test | AP_small test |
+|---|---|---|---|---|
+| YOLOv8s, cắt ô 640 + SAHI | **83.9** | **78.1** | **51.4** | **46.8** |
+| YOLOv8s, imgsz 1280 | 82.2 | 76.8 | 50.8 | 45.1 |
+| Faster R-CNN R50-FPN (exp03) | 75.2 | 69.3 | 41.8 | 35.9 |
+
+- YOLOv8s 1280 hơn Faster R-CNN 7.5 điểm mAP@0.5. Khoảng tin cậy 95% bootstrap là [4.5, 10.2], tức có ý nghĩa thống kê.
+- Cắt ô + SAHI hơn 1280 1.3 điểm, nhưng chênh lệch này không có ý nghĩa thống kê.
+- Bảng đầy đủ: [reports/eval/results.md](reports/eval/results.md). Mục Thực nghiệm của báo cáo: [docs/report/experiments.tex](docs/report/experiments.tex).
 
 ## Cấu trúc thư mục
 
 ```text
-├── data/
-│   ├── splits/                  # Nhãn COCO JSON đã làm sạch (train.json, val.json, test.json)
-│   └── splits_raw/              # Nhãn gốc trước khi gộp 17.5% box trùng (chỉ để đối chiếu)
+├── data/                    Nhãn COCO JSON (nhỏ, có trong repo)
+│   ├── splits/              ★ train/val/test đã gộp box trùng, chia theo street_id. Mọi thí nghiệm dùng bộ này
+│   ├── splits_raw/          Nhãn trước khi gộp box trùng (chỉ để đối chiếu)
+│   └── leak/                Bộ chia riêng cho thí nghiệm rò rỉ dữ liệu
+├── data_prep/               (A) Chuẩn bị dữ liệu: eda.py, dedup_boxes.py, make_split.py
+├── evaluation/              (A) Đánh giá chung cho mọi mô hình
+│   ├── evaluate.py          Chấm mAP bằng pycocotools (+ test_evaluate.py để tự kiểm tra)
+│   ├── analyze_errors.py    Ma trận nhầm lẫn, recall theo kích thước và theo cụm biển
+│   ├── bootstrap_ap.py      Kiểm định chênh lệch AP có ý nghĩa thống kê không
+│   ├── compare_runs.py      So từng lớp giữa các thí nghiệm
+│   ├── visualize.py         Vẽ nhãn và dự đoán, lọc biển nhỏ bị bỏ sót
+│   └── freeze_results.py    Chụp lại mã băm của kết quả (snapshot)
+├── yolo/                    (B) YOLOv8
+│   ├── coco_to_yolo.py      Chuyển nhãn COCO sang YOLO (+ check_yolo_labels.py)
+│   ├── train_yolov8.py      Train (640, 1280, P2, --cls-pw, W&B)
+│   ├── predict_yolo.py      Xuất dự đoán ra COCO JSON (thường hoặc SAHI) rồi chấm
+│   ├── tile_yolo_dataset.py Cắt ảnh thành ô 640×640 để train
+│   └── notebooks/           Notebook chạy trọn gói trên Kaggle/Colab
+├── faster_rcnn/             (C) Faster R-CNN ResNet50-FPN: train.py, evaluate.py, configs/ (xem README riêng)
+├── streaming/               (C) Suy luận thời gian thực trên video, ONNX, tracker (xem README riêng)
+├── experiments/             Thí nghiệm phân tích (A), mỗi thư mục có README mô tả thiết kế và kết quả
+│   ├── leakage/             Rò rỉ dữ liệu: chia ngẫu nhiên và chia theo tuyến đường
+│   └── imbalance/           Mất cân bằng lớp: oversampling (RFS) và trọng số lớp (cls_pw)
+├── preds/                   File dự đoán <mô hình>_<val|test>.json (định dạng chung)
+├── reports/                 Kết quả
+│   ├── eval/                Điểm từng thí nghiệm + results.md (bảng tổng) + bootstrap_test.json
+│   ├── errors/              Phân tích lỗi từng mô hình + phan_tich_loi.md (tổng hợp)
+│   ├── eda/, eda_dedup/     Thống kê dữ liệu trước và sau khi gộp box trùng
+│   ├── eval_leak/, imbalance/   Kết quả hai thí nghiệm phân tích
+│   └── latency_fps/         Đo tốc độ YOLO và Faster R-CNN
 ├── docs/
-│   ├── notes_du_lieu.md         # Ghi chú phân tích ảnh, lỗi nhãn và biển đứng cụm
-│   ├── proposal_du_lieu.tex     # Mục Dữ liệu (LaTeX) cho Proposal
-│   ├── tom_tat_FPN.md           # Tóm tắt bài báo Feature Pyramid Networks (CVPR 2017)
-│   └── tom_tat_YOLO.md          # Tóm tắt bài báo YOLO & kiến trúc YOLOv8
-├── notebooks/
-│   └── yolo_kaggle_colab.ipynb  # Notebook chạy trọn gói YOLOv8 (640, 1280, P2, Tiling, SAHI) trên Kaggle/Colab
-├── reports/
-│   ├── eda/                     # Thống kê trên nhãn gốc
-│   └── eda_dedup/               # Thống kê trên nhãn đã gộp box trùng
-└── scripts/
-    ├── eda.py                   # Thống kê phân phối lớp và kích thước bounding box
-    ├── dedup_boxes.py           # Gộp các bounding box bị gán nhãn lặp trên cùng một biển báo
-    ├── make_split.py            # Chia train/val/test theo street_id và phân tầng theo lớp
-    ├── coco_to_yolo.py          # Chuyển đổi nhãn COCO JSON sang định dạng Ultralytics YOLO
-    ├── check_yolo_labels.py     # Vẽ kiểm tra nhãn YOLO (.txt) trên ảnh gốc
-    ├── train_yolov8.py            # Huấn luyện YOLOv8 (hỗ trợ imgsz=640/1280, YOLOv8-P2, W&B)
-    ├── predict_yolo.py          # Xuất dự đoán YOLO ra COCO JSON (hỗ trợ chuẩn & SAHI) và chấm điểm
-    ├── tile_yolo_dataset.py     # Cắt mảnh (Tiling) ảnh 1622x626 cho tập huấn luyện YOLO
-    ├── evaluate.py              # Script chấm điểm chung bằng pycocotools (mAP@0.5, mAP@0.5:0.95, AP_small)
-    ├── test_evaluate.py         # Kiểm thử tự động cho evaluate.py
-    └── visualize.py             # Vẽ đối chiếu nhãn thật và dự đoán, lọc biển nhỏ bị bỏ sót
+│   ├── report/              Các mục của báo cáo cuối (LaTeX, template ACL)
+│   ├── notes/               Ghi chú dữ liệu, tóm tắt bài báo YOLO và FPN
+│   ├── proposal.tex, proposal_du_lieu.tex, custom.bib, realtime_report.md
+└── tests/                   Kiểm thử cho streaming
 ```
 
----
+Không có trong repo (tải hoặc tạo lại): ảnh gốc `za_traffic_2020/`, dữ liệu YOLO `data/yolo*/`, trọng số `*.pt`.
 
-## Hướng dẫn cài đặt và chạy nhanh
+## Tái tạo kết quả
 
-### 1. Cài đặt môi trường & tải dữ liệu
+Mọi lệnh chạy từ thư mục gốc của repo.
+
+### 1. Cài đặt và tải dữ liệu
 ```bash
 pip install -r requirements.txt
 ```
-Tải bộ dữ liệu **Zalo AI 2020 Traffic Sign Detection** (Kaggle dataset `za-traffic-2020`) và giải nén vào thư mục gốc sao cho ảnh nằm tại `za_traffic_2020/traffic_train/images/`.
+Tải bộ **Zalo AI 2020 Traffic Sign Detection** (Kaggle dataset `za-traffic-2020`), giải nén sao cho ảnh nằm ở `za_traffic_2020/traffic_train/images/`.
 
-### 2. Chuyển đổi dữ liệu sang định dạng YOLO (Thành viên B)
+### 2. Gộp box trùng và chia tập
+Bước này **không cần chạy lại**, vì kết quả đã có sẵn trong `data/splits/`. Các lệnh dưới đây chỉ để tái tạo.
 ```bash
-python scripts/coco_to_yolo.py --splits data/splits --images za_traffic_2020/traffic_train/images --out data/yolo
-python scripts/check_yolo_labels.py --yolo data/yolo --split train --n 5
+# 17,5% box là box lặp trên cùng một biển -> gộp lại
+python data_prep/dedup_boxes.py --ann za_traffic_2020/traffic_train/train_traffic_sign_dataset.json --out data/clean/train_dedup.json
+# Chia 70/15/15 theo tuyến đường (street_id), phân tầng theo lớp hiếm nhất, seed 42
+python data_prep/make_split.py --ann data/clean/train_dedup.json --out data/splits --group-key street_id
+# Thống kê dữ liệu
+python data_prep/eda.py --ann data/clean/train_dedup.json --out reports/eda_dedup
 ```
 
-### 3. Huấn luyện và xuất dự đoán YOLOv8
-Có thể chạy trực tiếp trên **Kaggle / Google Colab** bằng notebook [`notebooks/yolo_kaggle_colab.ipynb`](notebooks/yolo_kaggle_colab.ipynb) hoặc chạy qua dòng lệnh:
-
+### 3. YOLOv8 (chạy trên GPU, ví dụ Kaggle T4; ultralytics 8.4.204)
+Chạy trọn gói bằng notebook [yolo/notebooks/yolo_kaggle_colab.ipynb](yolo/notebooks/yolo_kaggle_colab.ipynb), hoặc bằng dòng lệnh:
 ```bash
-# Baseline YOLOv8s ở imgsz=640
-python scripts/train_yolov8.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 640 --name yolov8s_640
-python scripts/predict_yolo.py --weights runs/detect/yolov8s_640/weights/best.pt \
-    --imgsz 640 --out preds/yolov8s_640_val.json --eval --name yolov8s_640
+python yolo/coco_to_yolo.py --splits data/splits --images za_traffic_2020/traffic_train/images --out data/yolo
+python yolo/train_yolov8.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 1280 --epochs 50 --batch 8 --name yolov8s_1280
+python yolo/predict_yolo.py --weights runs/detect/yolov8s_1280/weights/best.pt --imgsz 1280 \
+    --gt data/splits/val.json --images data/yolo/images/val --out preds/yolov8s_1280_val.json --eval --name yolov8s_1280
 
-# Phương pháp chính: YOLOv8s ở imgsz=1280 (hoặc thêm tầng P2 với --model yolov8s-p2.yaml --pretrained yolov8s.pt)
-python scripts/train_yolov8.py --data data/yolo/data.yaml --model yolov8s.pt --imgsz 1280 --batch 8 --name yolov8s_1280
-python scripts/predict_yolo.py --weights runs/detect/yolov8s_1280/weights/best.pt \
-    --imgsz 1280 --out preds/yolov8s_1280_val.json --eval --name yolov8s_1280
-
-# Phần mở rộng (Tuần 4): Suy luận cắt mảnh SAHI & Tiling
-python scripts/predict_yolo.py --weights runs/detect/yolov8s_640/weights/best.pt \
-    --imgsz 640 --sahi --slice-size 640 --overlap 0.2 \
-    --out preds/yolov8s_640_sahi_val.json --eval --name yolov8s_640_sahi
+# Cắt ô 640 + SAHI
+python yolo/tile_yolo_dataset.py --splits data/splits --images za_traffic_2020/traffic_train/images --out data/yolo_tiled
+python yolo/train_yolov8.py --data data/yolo_tiled/data.yaml --model yolov8s.pt --imgsz 640 --epochs 40 --batch 16 --name yolov8s_tiled_640
+python yolo/predict_yolo.py --weights runs/detect/yolov8s_tiled_640/weights/best.pt --imgsz 640 \
+    --images data/yolo_tiled/images/val --sahi --slice-size 640 --overlap 0.2 \
+    --out preds/yolov8s_tiled_640_sahi_val.json --eval --name yolov8s_tiled_640_sahi
 ```
 
-### 4. Đánh giá chung cho mọi mô hình (`pycocotools`)
-Mọi file dự đoán trong `preds/<ten_mo_hinh>_val.json` (từ cả YOLOv8 và Faster R-CNN) đều chấm bằng cùng một lệnh:
+### 4. Faster R-CNN
 ```bash
-python scripts/evaluate.py --gt data/splits/val.json --pred preds/<file_du_doan>.json --name <ten_thi_nghiem>
+python faster_rcnn/train.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml
+python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --split val
 ```
-Bảng tổng hợp tự động được cập nhật tại `reports/eval/results.md`.
+Cách chạy trên Kaggle và ý nghĩa các tham số: [faster_rcnn/README.md](faster_rcnn/README.md).
+
+### 5. Đánh giá và phân tích (CPU là đủ)
+Mọi mô hình xuất dự đoán theo cùng một định dạng: `[{"image_id", "category_id", "bbox": [x, y, w, h], "score"}]`, tọa độ pixel trên ảnh gốc, `category_id` là id gốc COCO, xuất ở `conf=0.001`.
+```bash
+python evaluation/evaluate.py       --gt data/splits/val.json --pred preds/<tên>_val.json --name <tên>
+python evaluation/analyze_errors.py --gt data/splits/val.json --pred preds/<tên>_val.json --name <tên>
+python evaluation/bootstrap_ap.py   --gt data/splits/val.json --base <mô hình gốc> --runs <mô hình khác>
+python evaluation/visualize.py      --gt data/splits/val.json --images za_traffic_2020/traffic_train/images \
+    --pred preds/<tên>_val.json --only-missed-small --n 20 --out reports/missed_<tên>
+```
+Tập test (`data/splits/test.json`) chỉ dùng cho các mô hình cuối, mỗi mô hình chấm một lần. Đổi `_val` thành `_test` trong các lệnh trên.
+
+### 6. Thí nghiệm phân tích và demo
+- Rò rỉ dữ liệu: [experiments/leakage/README.md](experiments/leakage/README.md)
+- Mất cân bằng lớp: [experiments/imbalance/README.md](experiments/imbalance/README.md)
+- Suy luận thời gian thực trên video: [streaming/README.md](streaming/README.md), chạy bằng `python -m streaming.demo ...`
+
+## Phân công
+
+| Thành viên | Phụ trách chính | Phần mở rộng |
+| :--- | :--- | :--- |
+| **A – Dữ liệu & Đánh giá** | Gộp box trùng, EDA, chia tập theo `street_id`, script đánh giá chung, phân tích lỗi | Rò rỉ dữ liệu, mất cân bằng lớp |
+| **B – YOLOv8** | Pipeline YOLOv8 (640/1280, P2), W&B, quản lý repo | Cắt ô + SAHI |
+| **C – Faster R-CNN & So sánh** | Faster R-CNN ResNet50-FPN, anchor nhỏ, so sánh tốc độ và độ chính xác | Suy luận thời gian thực trên video, demo |

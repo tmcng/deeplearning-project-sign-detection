@@ -28,7 +28,7 @@ from faster_rcnn.configs.config_loader import _deep_merge, _load_yaml
 from faster_rcnn.dataset import ZaloCOCODataset, collate_fn
 from faster_rcnn.evaluate import evaluate_coco_metrics, evaluate_loss
 from faster_rcnn.models import build_model
-from scripts.tracker import WandbTracker
+from faster_rcnn.tracker import WandbTracker
 
 LOG_STEP_INTERVAL: int = 20
 DEFAULT_CONF_THRESH: float = 0.001
