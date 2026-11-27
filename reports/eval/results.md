@@ -9,3 +9,6 @@
 | exp03_fpn_aug | val | 75.2 | 48.6 | 41.3 | 71.8 | 53.4 |
 | imb_rfs | val | 81.0 | 55.8 | 49.6 | 74.4 | 51.1 |
 | imb_clspw | val | 81.1 | 55.7 | 49.7 | 74.7 | 49.4 |
+| yolov8s_1280_test | test | 76.8 | 50.8 | 45.1 | 76.9 | 77.1 |
+| yolov8s_tiled_640_sahi_test | test | 78.1 | 51.4 | 46.8 | 75.1 | 76.0 |
+| fasterrcnn_exp03_test | test | 69.3 | 41.8 | 35.9 | 71.4 | 72.3 |

@@ -1,0 +1,155 @@
+% ------------------------------------------------
+% THỰC NGHIỆM (Thành viên A). Ghép vào báo cáo chính bằng \input{report/experiments}
+% Cần: booktabs, multirow (\usepackage{multirow}), tham khảo trong custom.bib (zalo2020traffic, lin2014coco, jocher2023ultralytics,
+% ren2015faster, lin2017fpn, akyon2022sahi, efron1993bootstrap)
+% ------------------------------------------------
+
+\section{Thực nghiệm}
+\label{sec:experiments}
+
+\subsection{Dữ liệu và cách chia tập}
+\label{sec:data-split}
+
+\paragraph{Gộp box trùng.}
+Khi kiểm tra nhãn bằng mắt, nhóm phát hiện nhiều biển bị gán 2--3 box gần như trùng nhau, cùng lớp, chỉ lệch 1--2 pixel. Nếu giữ nguyên, mỗi biển chỉ khớp được với một dự đoán, nên các box lặp luôn bị tính là bỏ sót. Với tập test ban đầu, recall tối đa chỉ còn khoảng 77\% kể cả khi mô hình hoàn hảo.
+Vì vậy, trong mỗi ảnh, nhóm gộp các box \emph{cùng lớp} có IoU $\geq 0{,}45$ thành một box có tọa độ trung bình. Các box được nối bắc cầu: A trùng B, B trùng C thì A, B, C chung một cụm.
+Ngưỡng này an toàn vì hai biển thật đứng cạnh nhau gần như không chồng lên nhau (IoU $\approx 0$): 124/125 cặp có IoU trong khoảng $[0{,}45; 0{,}7)$ là box lặp cùng lớp.
+Sau khi gộp, số box giảm từ 11.000 xuống 9.077 (17,5\%). Tập test bị nặng nhất: 24,7\% box bị bỏ.
+
+\paragraph{Đặc điểm dữ liệu.}
+Sau khi gộp, 77,6\% box là box nhỏ theo chuẩn COCO (diện tích $< 32^2$ pixel). Cạnh trung vị $\sqrt{wh}$ chỉ 16,5 pixel trên ảnh rộng 1622 pixel.
+Khi thu nhỏ ảnh về cạnh dài 640, cạnh trung vị còn 6,5 pixel, và 68,9\% box có cạnh dưới 10 pixel.
+Lớp nhiều nhất (\textit{Nguy hiểm}, 2.329 box) nhiều gấp 4,8 lần lớp ít nhất (\textit{Cấm rẽ}, 489 box).
+Mỗi lớp đã gộp cả biến thể trái và phải, nên lật ngang ảnh không làm đổi lớp.
+
+\paragraph{Chia tập theo tuyến đường.}
+Ảnh là các khung hình liên tiếp trên 38 tuyến đường (trường \texttt{street\_id}). Nếu chia ngẫu nhiên theo ảnh, hai khung hình gần như giống hệt nhau có thể rơi vào cả train lẫn tập đánh giá.
+Vì vậy nhóm chia theo tuyến đường, tỉ lệ 70/15/15 (seed 42): mọi ảnh của một tuyến đường nằm trọn trong một tập. Các tuyến đường được phân tầng theo lớp hiếm nhất có trong tuyến, để lớp hiếm có mặt ở cả ba tập (Bảng~\ref{tab:split}).
+Mục Phân tích định lượng mức đánh giá quá cao nếu chia ngẫu nhiên.
+Mọi mô hình dùng chung bộ chia này. Chọn cấu hình chỉ dựa trên tập val. Tập test chỉ được chấm \emph{một lần}, cho các mô hình cuối cùng.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Tập & Ảnh & Box & Tuyến đường \\
+\midrule
+Train & 2.933 & 5.693 & 28 \\
+Val   &   696 & 1.636 &  5 \\
+Test  &   871 & 1.748 &  5 \\
+\bottomrule
+\end{tabular}
+\caption{Ba tập dữ liệu sau khi gộp box trùng, chia theo tuyến đường.}
+\label{tab:split}
+\end{table}
+
+\subsection{Thiết lập huấn luyện}
+\label{sec:setup}
+
+Cả hai họ mô hình đều khởi tạo từ trọng số tiền huấn luyện trên COCO \citep{lin2014coco} và được huấn luyện trên GPU Tesla T4 (Kaggle).
+
+\paragraph{YOLOv8s} \citep{jocher2023ultralytics} (Ultralytics 8.4.204).
+Huấn luyện 50 epoch, dừng sớm nếu 15 epoch liên tiếp không cải thiện, seed 0.
+Augmentation để mặc định: mosaic (tắt ở 10 epoch cuối), lật ngang với xác suất 0,5, co giãn $\pm 50\%$.
+NMS theo từng lớp với ngưỡng IoU 0,65. Ngưỡng này cao để không xóa nhầm các biển đứng sát nhau.
+Nhóm thử ba cách xử lý biển nhỏ:
+\begin{itemize}
+\item \textbf{640}: ảnh đầu vào 640, batch 16. Đây là baseline.
+\item \textbf{1280}: ảnh đầu vào 1280, batch 8.
+\item \textbf{Cắt ô + SAHI}: khi huấn luyện, ảnh gốc được cắt thành các ô $640 \times 640$ chồng lấp 20\%.
+  Một box chỉ được giữ trong ô nếu ít nhất 60\% diện tích của nó nằm trong ô. Các ô không có biển chỉ giữ ngẫu nhiên 15\%.
+  Huấn luyện 40 epoch, batch 16.
+  Khi suy luận, dùng SAHI \citep{akyon2022sahi}: dự đoán trên từng ô và trên cả ảnh gốc, rồi gộp bằng NMS theo lớp.
+\end{itemize}
+
+\paragraph{Faster R-CNN ResNet50-FPN} \citep{ren2015faster,lin2017fpn} (torchvision).
+Ảnh được co sao cho cạnh ngắn bằng 800, cạnh dài không quá 1333. Ba cấu hình được thử:
+\begin{itemize}
+\item \textbf{exp01}: đóng băng backbone, anchor mặc định 32--512 pixel, không augmentation.
+\item \textbf{exp02}: mở khóa FPN và 3 tầng cuối của ResNet; anchor nhỏ 8--128 pixel với tỉ lệ khung 0,8/1,0/1,25; nâng cạnh dài tối đa lên 1800 để ảnh 1622 pixel không bị thu nhỏ.
+\item \textbf{exp03}: như exp02, thêm augmentation độ sáng và độ tương phản, không lật ngang.
+\end{itemize}
+Cả ba dùng SGD (lr 0,0025, momentum 0,9, weight decay $5 \cdot 10^{-4}$), 30 epoch, giảm lr 10 lần ở epoch 20 và 26, batch 8, FP16, cắt gradient ở chuẩn 1,0.
+
+\subsection{Chỉ số đánh giá}
+\label{sec:metrics}
+
+Mọi mô hình xuất dự đoán theo cùng một định dạng: tọa độ pixel trên ảnh gốc, ngưỡng độ tin cậy rất thấp (0,001), để không cắt mất phần cuối của đường precision--recall.
+Tất cả được chấm bằng cùng một script dựa trên \texttt{pycocotools}.
+Chỉ số chính là mAP@0.5. Nhóm báo cáo thêm mAP@0.5:0.95 và AP theo kích thước theo chuẩn COCO: nhỏ ($< 32^2$), vừa ($32^2$--$96^2$) và lớn ($> 96^2$ pixel).
+Tập val chỉ có 23 biển lớn, nên AP\textsubscript{L} trên val dao động mạnh và không được dùng để so sánh.
+Để biết chênh lệch giữa hai mô hình có ý nghĩa thống kê hay không, nhóm dùng \emph{paired bootstrap} \citep{efron1993bootstrap}: lấy mẫu lại có hoàn lại các ảnh của tập đánh giá 1000 lần, mỗi lần tính lại AP50 của các mô hình trên cùng bộ ảnh, rồi lấy khoảng 2,5\%--97,5\% của chênh lệch làm khoảng tin cậy 95\%.
+
+\subsection{Kết quả}
+\label{sec:results}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccccccc}
+\toprule
+& & \multicolumn{4}{c}{Val (696 ảnh)} & \multicolumn{4}{c}{Test (871 ảnh)} \\
+\cmidrule(lr){3-6} \cmidrule(lr){7-10}
+Mô hình & Cấu hình & mAP@.5 & mAP@.5:.95 & AP\textsubscript{S} & AP\textsubscript{M} & mAP@.5 & mAP@.5:.95 & AP\textsubscript{S} & AP\textsubscript{M} \\
+\midrule
+\multirow{4}{*}{YOLOv8s}
+& 640 (baseline)    & 61,7 & 39,8 & 29,8 & 70,5 & -- & -- & -- & -- \\
+& 640 + SAHI        & 78,1 & 45,2 & 37,3 & 70,8 & -- & -- & -- & -- \\
+& 1280              & 82,2 & 56,6 & 50,2 & \textbf{76,1} & 76,8 & 50,8 & 45,1 & \textbf{76,9} \\
+& Cắt ô 640 + SAHI  & \textbf{83,9} & \textbf{57,9} & \textbf{52,3} & 75,2 & \textbf{78,1} & \textbf{51,4} & \textbf{46,8} & 75,1 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{Faster R-CNN\\R50-FPN}}
+& exp01 (baseline)   & 64,8 & 41,6 & 33,5 & 68,1 & -- & -- & -- & -- \\
+& exp02 (anchor nhỏ) & 72,5 & 47,7 & 40,3 & 71,2 & -- & -- & -- & -- \\
+& exp03 (+ augment)  & 75,2 & 48,6 & 41,3 & 71,8 & 69,3 & 41,8 & 35,9 & 71,4 \\
+\bottomrule
+\end{tabular}
+\caption{Kết quả trên val và test (\%). Chỉ các mô hình cuối cùng được chấm trên test, và chỉ chấm một lần.
+Dự đoán val của Faster R-CNN được xuất ở ngưỡng 0,05 thay vì 0,001, nên mAP trên val của Faster R-CNN có thể thấp hơn thực tế một chút; dự đoán test được xuất ở ngưỡng 0,0001.}
+\label{tab:results}
+\end{table*}
+
+Bảng~\ref{tab:results} tổng hợp kết quả. Ba nhận xét chính:
+
+\paragraph{Biển nhỏ quyết định kết quả.}
+Ở cấu hình baseline, AP của biển nhỏ kém biển vừa 40,7 điểm với YOLO (ảnh 640) và 34,6 điểm với Faster R-CNN.
+Các cách giữ được độ phân giải chủ yếu cải thiện biển nhỏ. Với YOLO, chuyển từ 640 lên 1280 tăng AP\textsubscript{S} từ 29,8 lên 50,2 (+20,4), trong khi AP\textsubscript{M} chỉ tăng 5,6.
+Với Faster R-CNN, anchor nhỏ và không thu nhỏ ảnh (exp02) tăng AP\textsubscript{S} thêm 6,8 điểm.
+SAHI áp lên mô hình 640 có sẵn (không huấn luyện lại) đã tăng mAP@0.5 thêm 16,4 điểm. Nhưng mAP@0.5:0.95 chỉ tăng 5,4 điểm, nghĩa là box ghép từ các ô kém khít hơn.
+
+\paragraph{YOLOv8s tốt hơn Faster R-CNN rõ rệt.}
+Trên test, YOLOv8s 1280 hơn Faster R-CNN exp03 7,5 điểm mAP@0.5. Khoảng tin cậy 95\% của chênh lệch là $[4{,}5; 10{,}2]$, tức có ý nghĩa thống kê.
+Faster R-CNN kém hơn ở cả 7 lớp, trong đó 4 lớp có chênh lệch có ý nghĩa thống kê. Kém rõ nhất là \textit{Cấm còn lại} ($-20{,}2$) và \textit{Cấm rẽ} ($-10{,}2$).
+
+\paragraph{Cắt ô + SAHI và 1280 ngang nhau.}
+Trên test, cắt ô + SAHI hơn 1280 1,3 điểm mAP@0.5. Nhưng khoảng tin cậy $[-0{,}5; +3{,}2]$ chứa 0, nên chưa đủ bằng chứng để nói cách nào tốt hơn.
+Cắt ô + SAHI tốt hơn ở \textit{Hiệu lệnh} (+7,7) và \textit{Cấm còn lại} (+5,1), nhưng tạo nhiều box lặp hơn (78 so với 17) và báo nhầm nền nhiều hơn (123 so với 97 box).
+Vì vậy cả hai cấu hình đều được giữ làm kết quả cuối. Cấu hình 1280 đơn giản hơn và suy luận nhanh hơn.
+
+\paragraph{Từ val sang test.}
+mAP@0.5 của cả ba mô hình cuối đều giảm 5--6 điểm từ val sang test, và thứ hạng giữa chúng không đổi.
+Tập test khó hơn val: 21\% biển trong test nhỏ hơn 8 pixel, trong khi ở val chỉ có 10\%. Ở cả ba mô hình, nhóm biển dưới 8 pixel bị bỏ sót 60--78\%.
+Chọn cấu hình trên val vẫn dẫn tới cùng kết luận trên test.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrccc}
+\toprule
+Lớp & Biển & 1280 & Cắt ô+SAHI & FRCNN \\
+\midrule
+Cấm ngược chiều & 253 & 84,7 & \textbf{86,8} & 84,2 \\
+Cấm dừng và đỗ  & 209 & 87,9 & \textbf{90,1} & 82,7 \\
+Cấm rẽ          &  81 & \textbf{64,6} & 58,9 & 54,4 \\
+Giới hạn tốc độ &  79 & \textbf{65,4} & 61,7 & 58,4 \\
+Cấm còn lại     & 176 & 70,0 & \textbf{75,1} & 49,9 \\
+Nguy hiểm       & 690 & 87,6 & \textbf{89,1} & 81,1 \\
+Hiệu lệnh       & 260 & 77,5 & \textbf{85,3} & 74,7 \\
+\bottomrule
+\end{tabular}
+\caption{AP50 (\%) theo lớp trên test. FRCNN là Faster R-CNN exp03.}
+\label{tab:per-class-test}
+\end{table}
+
+Theo Bảng~\ref{tab:per-class-test}, ba lớp biển tròn viền đỏ (\textit{Cấm rẽ}, \textit{Giới hạn tốc độ}, \textit{Cấm còn lại}) có AP thấp nhất ở cả ba mô hình. \textit{Cấm ngược chiều} thì ngược lại: lớp này có tới 90,5\% box nhỏ nhưng vẫn đạt AP cao. Mục Phân tích giải thích hai hiện tượng này.
