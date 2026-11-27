@@ -1,0 +1,115 @@
+% ------------------------------------------------
+% PHƯƠNG PHÁP (YOLOv8 của B, Faster R-CNN của C). Ghép vào báo cáo chính bằng \input{sections/method}
+% ------------------------------------------------
+
+\section{Phương pháp}
+\label{sec:method}
+
+Cả hai mô hình đều được khởi tạo từ trọng số tiền huấn luyện trên COCO \citep{lin2014coco}. Hai mô hình dùng chung dữ liệu, cách chia tập và cách đánh giá (Mục~\ref{sec:experiments}).
+Hình~\ref{fig:arch} so sánh kiến trúc của hai mô hình.
+Khó khăn chung của cả hai là biển rất nhỏ. Ảnh gốc rộng 1622 pixel, trong khi cạnh trung vị của biển chỉ 16,5 pixel.
+
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=0.32cm,
+  blk/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=0.95cm, inner sep=3pt},
+  io/.style={blk, fill=gray!10},
+  yolo/.style={blk, fill=blue!8},
+  frc/.style={blk, fill=orange!10},
+  arr/.style={-{Stealth[length=2mm]}, semithick}]
+\node[font=\small\bfseries, anchor=west] (t1) at (0, 1.05) {(a) YOLOv8s -- một giai đoạn, không dùng anchor};
+\node[io]   (y0) at (0.9, 0) {Ảnh\\1280 hoặc\\ô $640^2$};
+\node[yolo, right=of y0] (y1) {Backbone\\CSPDarknet\\(C2f, SPPF)};
+\node[yolo, right=of y1] (y2) {Neck PAN-FPN\\từ trên xuống\\+ từ dưới lên};
+\node[yolo, right=of y2] (y3) {Đầu tách rời\\P3/P4/P5\\(stride 8/16/32)};
+\node[yolo, right=of y3] (y4) {Phân loại (BCE)\\+ hộp bao\\(CIoU + DFL)};
+\node[io,   right=of y4] (y5) {NMS theo lớp\\(+ gộp ô\\nếu SAHI)};
+\foreach \a/\b in {y0/y1, y1/y2, y2/y3, y3/y4, y4/y5} \draw[arr] (\a) -- (\b);
+\node[font=\small\bfseries, anchor=west] (t2) at (0, -1.35) {(b) Faster R-CNN ResNet50-FPN -- hai giai đoạn};
+\node[io]  (f0) at (0.9, -2.4) {Ảnh\\cạnh dài\\$\leq 1800$};
+\node[frc, right=of f0] (f1) {Backbone\\ResNet50};
+\node[frc, right=of f1] (f2) {FPN\\P2--P6};
+\node[frc, right=of f2] (f3) {RPN\\anchor 8--128\\đề xuất vùng};
+\node[frc, right=of f3] (f4) {RoIAlign\\+ đầu RoI\\phân loại, hộp bao};
+\node[io,  right=of f4] (f5) {NMS\\theo lớp};
+\foreach \a/\b in {f0/f1, f1/f2, f2/f3, f3/f4, f4/f5} \draw[arr] (\a) -- (\b);
+\draw[arr] (f2.south) -- ++(0,-0.35) -| (f4.south);
+\end{tikzpicture}%
+}
+\caption{Kiến trúc hai mô hình. Màu xanh và cam là các thành phần học được; màu xám là tiền xử lý và hậu xử lý.
+(a) YOLOv8 dự đoán trực tiếp tại mỗi điểm trên ba tầng đặc trưng.
+(b) Faster R-CNN đề xuất vùng trước, rồi lấy đặc trưng của từng vùng từ FPN để phân loại.}
+\label{fig:arch}
+\end{figure*}
+
+\subsection{YOLOv8}
+\label{sec:yolo}
+
+YOLOv8s \citep{jocher2023ultralytics} gồm ba phần:
+\begin{itemize}
+\item backbone CSPDarknet với các khối C2f và SPPF;
+\item neck PAN-FPN, kết hợp đường từ trên xuống (đưa ngữ nghĩa xuống) và đường từ dưới lên (đưa thông tin vị trí lên);
+\item đầu dự đoán tách rời, không dùng anchor, ở ba tầng P3, P4, P5 (stride 8, 16, 32).
+\end{itemize}
+Mẫu dương được gán động bằng Task-Aligned Assigner. Hàm mất mát gồm BCE cho phân loại, CIoU và Distribution Focal Loss cho hồi quy hộp bao.
+
+\paragraph{Vì sao biển nhỏ khó với YOLOv8.}
+Ở kích thước đầu vào mặc định 640, ảnh bị thu nhỏ 2,5 lần. Biển trung vị chỉ còn khoảng 6,5 pixel, chưa bằng một ô của tầng mịn nhất (stride 8). Chi tiết bên trong biển, như con số hay mũi tên, gần như mất hết.
+Nhóm thử hai cách giữ độ phân giải:
+\begin{itemize}
+\item \textbf{Tăng kích thước đầu vào lên 1280.} Ảnh chỉ còn bị thu nhỏ 1,27 lần, biển trung vị khoảng 13 pixel. Cái giá là chi phí tính toán tăng khoảng 4 lần.
+\item \textbf{Cắt ô khi huấn luyện và SAHI khi suy luận} \citep{akyon2022sahi}. Ảnh gốc được cắt thành các ô $640 \times 640$ chồng lấp 20\%, nên biển giữ nguyên kích thước gốc. Khi suy luận, mô hình dự đoán trên từng ô và trên cả ảnh (để giữ ngữ cảnh cho biển lớn), rồi gộp bằng NMS theo từng lớp.
+\end{itemize}
+
+\paragraph{Hậu xử lý.}
+NMS được áp dụng theo từng lớp với ngưỡng IoU 0,65. Ngưỡng này khá cao, vì 43\% biển đứng sát một biển khác, và NMS theo từng lớp không xóa nhầm hai biển khác lớp đứng cạnh nhau.
+Mỗi lớp đã gộp cả biến thể trái và phải, nên lật ngang ảnh không làm đổi nhãn và được giữ trong augmentation.
+
+\subsection{Faster R-CNN ResNet50-FPN}
+\label{sec:frcnn}
+
+Faster R-CNN \citep{ren2015faster} dùng backbone ResNet50 với FPN \citep{lin2017fpn}, tạo ra các tầng đặc trưng P2--P6.
+Mạng đề xuất vùng (RPN) đặt một kích thước anchor cho mỗi tầng. Đầu RoI lấy đặc trưng của mỗi đề xuất từ tầng phù hợp với kích thước của nó, rồi phân loại và tinh chỉnh tọa độ.
+Hàm mất mát là tổng của bốn thành phần:
+\begin{itemize}
+\item RPN: BCE cho việc anchor có chứa vật thể hay không, và smooth L1 cho độ lệch hộp bao;
+\item đầu RoI: cross-entropy trên 8 lớp (7 lớp biển và nền), và smooth L1 cho hộp bao.
+\end{itemize}
+
+\paragraph{Anchor quá lớn so với biển.}
+Cấu hình mặc định của torchvision dùng anchor 32--512 pixel. Anchor nhỏ nhất (32) đã lớn gần gấp đôi cạnh trung vị của biển, nên rất ít anchor có IoU đủ cao với biển nhỏ để được chọn làm mẫu dương.
+Mặc định, ảnh còn bị co cho cạnh dài bằng 1333 pixel, tức thu nhỏ thêm 0,82 lần.
+Nhóm thử ba cấu hình:
+\begin{itemize}
+\item \textbf{exp01}: mặc định, đóng băng backbone.
+\item \textbf{exp02}:
+  \begin{itemize}
+  \item anchor 8--128 pixel với tỉ lệ khung 0,8/1,0/1,25, vì biển báo gần như vuông;
+  \item nâng cạnh dài tối đa lên 1800, để ảnh được phóng to 1,11 lần thay vì thu nhỏ;
+  \item mở khóa 3 tầng cuối của ResNet để tinh chỉnh.
+  \end{itemize}
+\item \textbf{exp03}: như exp02, thêm augmentation độ sáng và độ tương phản.
+\end{itemize}
+Từ exp01 sang exp02 có nhiều yếu tố thay đổi cùng lúc, nên kết quả không tách được tác động riêng của anchor, kích thước ảnh và việc mở khóa backbone.
+
+\subsection{Phần nhóm tự cài đặt và phần dùng thư viện}
+\label{sec:implementation}
+
+\paragraph{Dùng thư viện.}
+\begin{itemize}
+\item Kiến trúc, hàm mất mát và vòng huấn luyện của YOLOv8: Ultralytics \citep{jocher2023ultralytics}.
+\item Kiến trúc Faster R-CNN ResNet50-FPN: torchvision.
+\item Cách tính AP theo chuẩn COCO: \texttt{pycocotools}.
+\end{itemize}
+
+\paragraph{Nhóm tự cài đặt.}
+\begin{itemize}
+\item \textbf{Dữ liệu:} gộp box trùng, chia tập theo tuyến đường, chuyển nhãn COCO sang YOLO, cắt ảnh thành ô có xử lý box nằm trên đường cắt.
+\item \textbf{Suy luận cắt ô kiểu SAHI}, viết lại theo ý tưởng của \citet{akyon2022sahi}, không dùng thư viện SAHI: chia cửa sổ, dịch tọa độ về ảnh gốc, gộp bằng NMS theo lớp.
+\item \textbf{Faster R-CNN:} bộ nạp dữ liệu, hệ thống cấu hình YAML, cấu hình anchor, vòng huấn luyện (FP16, cắt gradient, ghi log Weights \& Biases) và xuất dự đoán.
+\item \textbf{Đánh giá:} script đánh giá chung bọc \texttt{pycocotools} và tự kiểm tra định dạng; phân tích lỗi (ghép dự đoán, ma trận nhầm lẫn, recall theo kích thước và theo cụm); kiểm định bootstrap; Repeat Factor Sampling cho thí nghiệm mất cân bằng lớp.
+\item \textbf{Thời gian thực:} pipeline xử lý video, bộ theo dõi dựa trên IoU, xuất ONNX và đo tốc độ.
+\end{itemize}
+Mã nguồn và hướng dẫn tái tạo kết quả có trong repository của nhóm.

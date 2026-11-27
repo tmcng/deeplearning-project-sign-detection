@@ -14,7 +14,7 @@ Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô
 
 - YOLOv8s 1280 hơn Faster R-CNN 7.5 điểm mAP@0.5. Khoảng tin cậy 95% bootstrap là [4.5, 10.2], tức có ý nghĩa thống kê.
 - Cắt ô + SAHI hơn 1280 1.3 điểm, nhưng chênh lệch này không có ý nghĩa thống kê.
-- Bảng đầy đủ: [reports/eval/results.md](reports/eval/results.md). Mục Thực nghiệm của báo cáo: [docs/report/experiments.tex](docs/report/experiments.tex).
+- Bảng đầy đủ: [reports/eval/results.md](reports/eval/results.md). Báo cáo cuối (LaTeX, template ACL): [report/main.tex](report/main.tex).
 
 ## Cấu trúc thư mục
 
@@ -30,7 +30,8 @@ Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô
 │   ├── bootstrap_ap.py      Kiểm định chênh lệch AP có ý nghĩa thống kê không
 │   ├── compare_runs.py      So từng lớp giữa các thí nghiệm
 │   ├── visualize.py         Vẽ nhãn và dự đoán, lọc biển nhỏ bị bỏ sót
-│   └── freeze_results.py    Chụp lại mã băm của kết quả (snapshot)
+│   ├── freeze_results.py    Chụp lại mã băm của kết quả (snapshot)
+│   └── make_report_figures.py  Vẽ lại các hình của báo cáo vào report/figures/
 ├── yolo/                    (B) YOLOv8
 │   ├── coco_to_yolo.py      Chuyển nhãn COCO sang YOLO (+ check_yolo_labels.py)
 │   ├── train_yolov8.py      Train (640, 1280, P2, --cls-pw, W&B)
@@ -49,10 +50,12 @@ Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô
 │   ├── eda/, eda_dedup/     Thống kê dữ liệu trước và sau khi gộp box trùng
 │   ├── eval_leak/, imbalance/   Kết quả hai thí nghiệm phân tích
 │   └── latency_fps/         Đo tốc độ YOLO và Faster R-CNN
-├── docs/
-│   ├── report/              Các mục của báo cáo cuối (LaTeX, template ACL)
-│   ├── notes/               Ghi chú dữ liệu, tóm tắt bài báo YOLO và FPN
-│   ├── proposal.tex, proposal_du_lieu.tex, custom.bib, realtime_report.md
+├── report/                  Báo cáo cuối, tự chứa, tải thẳng lên Overleaf (compiler XeLaTeX)
+│   ├── main.tex             Trang chính: tóm tắt + \input các mục
+│   ├── sections/            intro, related, method, experiments, analysis, realtime, conclusion,
+│   │                        limitations, contributions
+│   ├── figures/             Hình (PDF), tạo bằng evaluation/make_report_figures.py
+│   └── custom.bib, acl.sty, acl_natbib.bst
 └── tests/                   Kiểm thử cho streaming
 ```
 
@@ -117,6 +120,16 @@ Tập test (`data/splits/test.json`) chỉ dùng cho các mô hình cuối, mỗ
 - Rò rỉ dữ liệu: [experiments/leakage/README.md](experiments/leakage/README.md)
 - Mất cân bằng lớp: [experiments/imbalance/README.md](experiments/imbalance/README.md)
 - Suy luận thời gian thực trên video: [streaming/README.md](streaming/README.md), chạy bằng `python -m streaming.demo ...`
+
+### 7. Báo cáo cuối
+```bash
+# Vẽ lại các hình (cần đã chạy analyze_errors.py trên test cho 3 mô hình cuối)
+python evaluation/make_report_figures.py --images za_traffic_2020/traffic_train/images
+```
+Biên dịch trên Overleaf:
+1. Nén thư mục `report/` thành file zip, rồi chọn **New Project → Upload Project**.
+2. Vào **Menu → Compiler**, chọn **XeLaTeX** (vì báo cáo viết tiếng Việt và dùng `fontspec`).
+3. Trang chính là `main.tex`.
 
 ## Phân công
 

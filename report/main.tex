@@ -1,0 +1,71 @@
+\documentclass[11pt]{article}
+
+% Overleaf: tải cả thư mục report/ lên (đã có acl.sty, acl_natbib.bst, custom.bib, figures/, sections/),
+% Menu -> Settings -> Compiler: XeLaTeX. Trang chính: main.tex.
+
+% ACL official style
+\usepackage[final]{acl}
+
+% Standard packages
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+
+% Vietnamese support - XeLaTeX
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\refname}{Tài liệu tham khảo}
+\renewcommand{\abstractname}{Tóm tắt}
+
+\title{Phát hiện biển báo giao thông Việt Nam trên ảnh camera hành trình:\\
+So sánh YOLOv8 và Faster R-CNN với biển báo nhỏ\\
+(Báo cáo cuối kỳ -- Nhóm 19)}
+
+\author{
+Hoàng Hải Anh \\ 24022248
+\And
+Tạ Mạnh Cường \\ 24022278
+\And
+Phạm Thế Hưng \\ 24022350
+\AND
+Học sâu -- GV: Nguyễn Việt Hà \\
+Trường Đại học Công nghệ, ĐHQGHN
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Nhóm so sánh mô hình một giai đoạn YOLOv8 và mô hình hai giai đoạn Faster R-CNN ResNet50-FPN cho bài toán phát hiện 7 loại biển báo giao thông trên ảnh camera hành trình Việt Nam (Zalo AI 2020). Trong bộ dữ liệu này, 77,6\% biển có diện tích dưới $32^2$ pixel.
+Trước khi huấn luyện, nhóm gộp 17,5\% box bị gán lặp và chia tập theo tuyến đường để tránh rò rỉ dữ liệu.
+Trên tập test, YOLOv8s ở kích thước đầu vào 1280 đạt 76,8 mAP@0.5, cao hơn Faster R-CNN 7,5 điểm (có ý nghĩa thống kê theo bootstrap), và suy luận nhanh hơn 5,8 lần (71 so với 12 FPS trên GPU T4).
+Giữ độ phân giải, bằng cách tăng kích thước đầu vào hoặc cắt ô kết hợp SAHI, làm AP với biển nhỏ tăng khoảng 20 điểm.
+Phân tích lỗi cho thấy:
+(i) phần lớn lỗi là bỏ sót biển dưới 16 pixel;
+(ii) nhầm lớp tập trung ở ba lớp biển tròn viền đỏ, và cân bằng lớp bằng oversampling hay trọng số lớp chỉ chuyển lỗi giữa các lớp này;
+(iii) chia tập ngẫu nhiên làm điểm cao hơn thực tế 5,7 điểm.
+\end{abstract}
+
+\input{sections/intro}
+\input{sections/related}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/analysis}
+\input{sections/realtime}
+\input{sections/conclusion}
+
+% Hai mục bắt buộc, không tính vào giới hạn 8 trang
+\input{sections/limitations}
+\input{sections/contributions}
+
+\bibliography{custom}
+
+\end{document}

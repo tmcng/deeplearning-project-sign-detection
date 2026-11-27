@@ -22,8 +22,7 @@ Ngưỡng score: mặc định "f1" = chọn ngưỡng cho F1 cao nhất trên t
 công bằng (score của YOLO và Faster R-CNN không cùng thang). Có thể đặt số cố định, vd. 0.25.
 
 Kích thước biển = sqrt(w*h) trên ảnh gốc (giống eda.py). "Cụm" = box có ít nhất một box thật
-khác trong ảnh nằm sát nó (khe hở cả ngang lẫn dọc < nửa cạnh nhỏ nhất của hai box), giống
-định nghĩa dùng trong docs/notes/notes_du_lieu.md.
+khác trong ảnh nằm sát nó (khe hở cả ngang lẫn dọc < nửa cạnh nhỏ nhất của hai box).
 """
 import argparse
 import json

@@ -1,6 +1,6 @@
 % ------------------------------------------------
-% PHÂN TÍCH (Thành viên A). Ghép vào báo cáo chính bằng \input{analysis}
-% Cần: booktabs, graphicx; hình trong figures/ (tạo bằng docs/report/make_figures.py)
+% PHÂN TÍCH (Thành viên A). Ghép vào báo cáo chính bằng \input{sections/analysis}
+% Cần: booktabs, graphicx; hình trong figures/ (tạo bằng evaluation/make_report_figures.py)
 % Số liệu: reports/errors/*_test, experiments/leakage, experiments/imbalance
 % ------------------------------------------------
 
@@ -140,14 +140,3 @@ Cả hai cách đều \emph{không} cải thiện các lớp hiếm (Bảng~\ref
 \end{enumerate}
 Không thấy dấu hiệu học thuộc do lặp ảnh: loss phân loại trên val vẫn giảm tới epoch cuối.
 Với nhầm lẫn giữa các lớp tròn viền đỏ, cách hợp lý hơn là cho mô hình nhìn rõ phần giữa biển (độ phân giải cao hơn, hoặc phân loại lại vùng cắt quanh biển) và sửa nhãn sai (Mục~\ref{sec:confusion}).
-
-\subsection{Hạn chế}
-\label{sec:limitations}
-
-\begin{itemize}
-\item \textbf{Nhãn còn nhiễu.} Box trùng đã được gộp, nhưng nhãn sai lớp và biển thiếu nhãn vẫn còn (Mục~\ref{sec:confusion} và \ref{sec:missing-labels}). Điểm trên test vì vậy là cận dưới của khả năng thật.
-\item \textbf{Ít tuyến đường.} Val và test mỗi tập chỉ có 5 tuyến đường. Kết quả có thể lệch vài điểm tùy tuyến đường nào rơi vào tập nào (Mục~\ref{sec:leakage}).
-\item \textbf{Mỗi cấu hình chỉ huấn luyện một lần.} Khoảng tin cậy bootstrap chỉ tính dao động do chọn ảnh, chưa tính dao động giữa các lần huấn luyện.
-\item \textbf{AP\textsubscript{L} không đáng tin.} Val chỉ có 23 biển lớn và test có 34, nên nhóm không so sánh AP\textsubscript{L}.
-\item \textbf{Ngưỡng xuất dự đoán của Faster R-CNN trên val} là 0,05 thay vì 0,001, nên mAP trên val của Faster R-CNN có thể thấp hơn thực tế một chút. Trên test thì không có vấn đề này.
-\end{itemize}

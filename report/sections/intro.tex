@@ -1,0 +1,30 @@
+% ------------------------------------------------
+% GIỚI THIỆU. Ghép vào báo cáo chính bằng \input{sections/intro}
+% ------------------------------------------------
+
+\section{Giới thiệu}
+\label{sec:intro}
+
+Phát hiện biển báo giao thông là một thành phần của các hệ thống hỗ trợ lái xe (ADAS) và xe tự hành.
+Với camera hành trình góc rộng trên đường phố Việt Nam, bài toán có ba khó khăn đặc thù.
+Thứ nhất, phần lớn biển báo ở xa nên rất nhỏ so với khung hình.
+Thứ hai, nhiều biển được gắn sát nhau trên cùng một cột.
+Thứ ba, số lượng mẫu giữa các loại biển chênh lệch nhau.
+
+\paragraph{Bài toán.}
+Đầu vào là một ảnh RGB $1622 \times 626$ chụp từ camera hành trình.
+Đầu ra là danh sách các phát hiện $(b_i, c_i, s_i)$, trong đó $b_i = [x, y, w, h]$ là hộp bao tính bằng pixel trên ảnh gốc, $c_i$ là một trong 7 lớp biển báo, và $s_i \in [0, 1]$ là độ tin cậy.
+Nhóm dùng bộ dữ liệu Zalo AI Challenge 2020 \citep{zalo2020traffic}, gồm 4.500 ảnh có nhãn.
+Ở bộ dữ liệu này, 77,6\% biển có diện tích dưới $32^2$ pixel, và cạnh trung vị chỉ 16,5 pixel.
+
+\paragraph{Câu hỏi nghiên cứu.}
+Nhóm so sánh hai trường phái phát hiện đối tượng tiêu biểu: YOLOv8 một giai đoạn \citep{jocher2023ultralytics} và Faster R-CNN hai giai đoạn với FPN \citep{ren2015faster,lin2017fpn}.
+Câu hỏi đặt ra là trên dữ liệu có nhiều biển nhỏ: (i) họ mô hình nào chính xác hơn và nhanh hơn; (ii) cách xử lý biển nhỏ nào hiệu quả; (iii) lỗi còn lại đến từ đâu.
+
+\paragraph{Đóng góp.}
+\begin{itemize}
+\item \textbf{Làm sạch dữ liệu và giao thức đánh giá.} Nhóm phát hiện và gộp 17,5\% box bị gán lặp. Nếu giữ nguyên, recall tối đa trên tập test chỉ khoảng 77\%. Nhóm chia tập theo tuyến đường, và dùng chung một script đánh giá cho mọi mô hình, kèm kiểm định bootstrap.
+\item \textbf{So sánh hai họ mô hình trên cùng giao thức.} Trên tập test, YOLOv8s ở imgsz 1280 đạt 76,8 mAP@0.5. Con số này cao hơn Faster R-CNN ResNet50-FPN 7,5 điểm (có ý nghĩa thống kê), trong khi suy luận nhanh hơn khoảng 6 lần trên cùng GPU.
+\item \textbf{Phân tích lỗi.} Lỗi chính là bỏ sót biển nhỏ: 87--92\% số biển bị bỏ sót có kích thước dưới 16 pixel. Nhầm lớp chủ yếu xảy ra giữa ba lớp biển tròn viền đỏ. Nhãn test vẫn còn biển thiếu nhãn và nhãn sai lớp.
+\item \textbf{Hai thí nghiệm phân tích.} (i) Chia tập ngẫu nhiên làm điểm trên val cao hơn thực tế 5,7 điểm. (ii) Cân bằng lớp bằng oversampling hoặc trọng số lớp không cải thiện các lớp hiếm, và nhóm chỉ ra vì sao.
+\end{itemize}

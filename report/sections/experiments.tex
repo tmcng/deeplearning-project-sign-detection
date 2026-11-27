@@ -1,5 +1,5 @@
 % ------------------------------------------------
-% THỰC NGHIỆM (Thành viên A). Ghép vào báo cáo chính bằng \input{report/experiments}
+% THỰC NGHIỆM (Thành viên A). Ghép vào báo cáo chính bằng \input{sections/experiments}
 % Cần: booktabs, multirow (\usepackage{multirow}), tham khảo trong custom.bib (zalo2020traffic, lin2014coco, jocher2023ultralytics,
 % ren2015faster, lin2017fpn, akyon2022sahi, efron1993bootstrap)
 % ------------------------------------------------
@@ -25,7 +25,8 @@ Mỗi lớp đã gộp cả biến thể trái và phải, nên lật ngang ản
 \paragraph{Chia tập theo tuyến đường.}
 Ảnh là các khung hình liên tiếp trên 38 tuyến đường (trường \texttt{street\_id}). Nếu chia ngẫu nhiên theo ảnh, hai khung hình gần như giống hệt nhau có thể rơi vào cả train lẫn tập đánh giá.
 Vì vậy nhóm chia theo tuyến đường, tỉ lệ 70/15/15 (seed 42): mọi ảnh của một tuyến đường nằm trọn trong một tập. Các tuyến đường được phân tầng theo lớp hiếm nhất có trong tuyến, để lớp hiếm có mặt ở cả ba tập (Bảng~\ref{tab:split}).
-Mục Phân tích định lượng mức đánh giá quá cao nếu chia ngẫu nhiên.
+Mục~
+ef{sec:leakage} định lượng mức đánh giá quá cao nếu chia ngẫu nhiên.
 Mọi mô hình dùng chung bộ chia này. Chọn cấu hình chỉ dựa trên tập val. Tập test chỉ được chấm \emph{một lần}, cho các mô hình cuối cùng.
 
 \begin{table}[t]
@@ -49,28 +50,24 @@ Test  &   871 & 1.748 &  5 \\
 
 Cả hai họ mô hình đều khởi tạo từ trọng số tiền huấn luyện trên COCO \citep{lin2014coco} và được huấn luyện trên GPU Tesla T4 (Kaggle).
 
-\paragraph{YOLOv8s} \citep{jocher2023ultralytics} (Ultralytics 8.4.204).
-Huấn luyện 50 epoch, dừng sớm nếu 15 epoch liên tiếp không cải thiện, seed 0.
-Augmentation để mặc định: mosaic (tắt ở 10 epoch cuối), lật ngang với xác suất 0,5, co giãn $\pm 50\%$.
-NMS theo từng lớp với ngưỡng IoU 0,65. Ngưỡng này cao để không xóa nhầm các biển đứng sát nhau.
-Nhóm thử ba cách xử lý biển nhỏ:
+Các cấu hình được mô tả ở Mục~\ref{sec:method}. Phần này chỉ liệt kê siêu tham số.
+
+\paragraph{YOLOv8s} (Ultralytics 8.4.204).
 \begin{itemize}
-\item \textbf{640}: ảnh đầu vào 640, batch 16. Đây là baseline.
-\item \textbf{1280}: ảnh đầu vào 1280, batch 8.
-\item \textbf{Cắt ô + SAHI}: khi huấn luyện, ảnh gốc được cắt thành các ô $640 \times 640$ chồng lấp 20\%.
-  Một box chỉ được giữ trong ô nếu ít nhất 60\% diện tích của nó nằm trong ô. Các ô không có biển chỉ giữ ngẫu nhiên 15\%.
-  Huấn luyện 40 epoch, batch 16.
-  Khi suy luận, dùng SAHI \citep{akyon2022sahi}: dự đoán trên từng ô và trên cả ảnh gốc, rồi gộp bằng NMS theo lớp.
+\item 50 epoch, dừng sớm nếu 15 epoch liên tiếp không cải thiện, seed 0.
+\item Batch 16 ở imgsz 640, batch 8 ở imgsz 1280.
+\item Augmentation để mặc định: mosaic (tắt ở 10 epoch cuối), lật ngang với xác suất 0,5, co giãn $\pm 50\%$.
+\item Cấu hình cắt ô: 40 epoch, batch 16. Một box chỉ được giữ trong ô nếu ít nhất 60\% diện tích nằm trong ô. Các ô không có biển chỉ giữ ngẫu nhiên 15\%.
+\item Thời gian: mỗi lần huấn luyện ở imgsz 1280 mất khoảng 2,2 giờ trên T4.
 \end{itemize}
 
-\paragraph{Faster R-CNN ResNet50-FPN} \citep{ren2015faster,lin2017fpn} (torchvision).
-Ảnh được co sao cho cạnh ngắn bằng 800, cạnh dài không quá 1333. Ba cấu hình được thử:
+\paragraph{Faster R-CNN} (torchvision).
 \begin{itemize}
-\item \textbf{exp01}: đóng băng backbone, anchor mặc định 32--512 pixel, không augmentation.
-\item \textbf{exp02}: mở khóa FPN và 3 tầng cuối của ResNet; anchor nhỏ 8--128 pixel với tỉ lệ khung 0,8/1,0/1,25; nâng cạnh dài tối đa lên 1800 để ảnh 1622 pixel không bị thu nhỏ.
-\item \textbf{exp03}: như exp02, thêm augmentation độ sáng và độ tương phản, không lật ngang.
+\item SGD: lr 0,0025, momentum 0,9, weight decay $5 \cdot 10^{-4}$.
+\item 30 epoch, giảm lr 10 lần ở epoch 20 và 26.
+\item Batch 8, FP16, cắt gradient ở chuẩn 1,0.
 \end{itemize}
-Cả ba dùng SGD (lr 0,0025, momentum 0,9, weight decay $5 \cdot 10^{-4}$), 30 epoch, giảm lr 10 lần ở epoch 20 và 26, batch 8, FP16, cắt gradient ở chuẩn 1,0.
+Thời gian huấn luyện của các cấu hình còn lại không được ghi lại.
 
 \subsection{Chỉ số đánh giá}
 \label{sec:metrics}
@@ -152,4 +149,5 @@ Hiệu lệnh       & 260 & 77,5 & \textbf{85,3} & 74,7 \\
 \label{tab:per-class-test}
 \end{table}
 
-Theo Bảng~\ref{tab:per-class-test}, ba lớp biển tròn viền đỏ (\textit{Cấm rẽ}, \textit{Giới hạn tốc độ}, \textit{Cấm còn lại}) có AP thấp nhất ở cả ba mô hình. \textit{Cấm ngược chiều} thì ngược lại: lớp này có tới 90,5\% box nhỏ nhưng vẫn đạt AP cao. Mục Phân tích giải thích hai hiện tượng này.
+Theo Bảng~\ref{tab:per-class-test}, ba lớp biển tròn viền đỏ (\textit{Cấm rẽ}, \textit{Giới hạn tốc độ}, \textit{Cấm còn lại}) có AP thấp nhất ở cả ba mô hình. \textit{Cấm ngược chiều} thì ngược lại: lớp này có tới 90,5\% box nhỏ nhưng vẫn đạt AP cao. Mục~
+ef{sec:confusion} giải thích hai hiện tượng này.

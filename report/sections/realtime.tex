@@ -1,0 +1,55 @@
+% ------------------------------------------------
+% TỐC ĐỘ VÀ SUY LUẬN THỜI GIAN THỰC (phần của C). Ghép vào báo cáo chính bằng \input{sections/realtime}
+% Số liệu: reports/latency_fps/summary.json (YOLO), summary1.json (Faster R-CNN)
+% ------------------------------------------------
+
+\section{Tốc độ và suy luận thời gian thực}
+\label{sec:realtime}
+
+Để đánh giá khả năng triển khai, nhóm xây dựng một pipeline xử lý video (thư mục \texttt{streaming/}). Pipeline đọc từng khung hình, phát hiện biển, theo dõi biển qua các khung hình bằng một bộ theo dõi dựa trên IoU, vẽ kết quả và ghi video đầu ra.
+
+\paragraph{Thiết lập đo.}
+Hai mô hình được đo trong cùng điều kiện:
+\begin{itemize}
+\item cùng một video camera hành trình $1280 \times 720$, 30 FPS, 5.400 khung hình (cùng mã băm SHA-256);
+\item GPU Tesla T4, FP16, batch 1, ngưỡng độ tin cậy 0,3;
+\item vùng quan tâm cố định: bỏ 35\% bên trái và 25\% phía dưới khung hình (mặt đường);
+\item bật theo dõi đối tượng và ghi video;
+\item bỏ 10 khung hình đầu để làm nóng GPU, đo trên 5.390 khung hình còn lại.
+\end{itemize}
+Nhóm báo cáo hai mức:
+\begin{itemize}
+\item \emph{suy luận}: tiền xử lý, chạy mạng và NMS;
+\item \emph{toàn pipeline}: gồm thêm đọc khung hình, theo dõi, vẽ và ghi video.
+\end{itemize}
+FPS được tính bằng tổng số khung hình chia cho tổng thời gian.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Suy luận} & \multicolumn{2}{c}{Toàn pipeline} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Mô hình & FPS & p95 (ms) & FPS & p95 (ms) \\
+\midrule
+YOLOv8s 1280         & \textbf{71,2} & \textbf{15,3} & \textbf{46,3} & \textbf{23,4} \\
+Faster R-CNN exp03   & 12,2 & 85,6 & 11,2 & 93,6 \\
+\bottomrule
+\end{tabular}
+\caption{Tốc độ trên GPU Tesla T4 (FP16, batch 1, video $1280 \times 720$, 5.390 khung hình đo).}
+\label{tab:speed}
+\end{table}
+
+\paragraph{Kết quả.}
+Theo Bảng~\ref{tab:speed}, YOLOv8s suy luận nhanh hơn Faster R-CNN 5,8 lần.
+Tính cả pipeline, YOLOv8s đạt 46,3 FPS, vượt tốc độ 30 FPS của camera. Faster R-CNN chỉ đạt 11,2 FPS, tức khoảng 37\% tốc độ thời gian thực: xử lý 3 phút video mất khoảng 8 phút.
+Độ trễ của cả hai ổn định: p95 chỉ cao hơn trung vị 1--4 ms.
+Kết hợp với Bảng~\ref{tab:results}, YOLOv8s 1280 vừa chính xác hơn vừa nhanh hơn Faster R-CNN trên dữ liệu này. Vì vậy nó là lựa chọn phù hợp cho ứng dụng thời gian thực.
+Cấu hình cắt ô + SAHI chưa được đo tốc độ. Mỗi khung hình cần chạy mạng trên nhiều ô cộng thêm cả ảnh, nên cấu hình này sẽ chậm hơn nhiều lần. Trong khi đó, độ chính xác của nó không hơn cấu hình 1280 một cách có ý nghĩa thống kê.
+
+\paragraph{Quan sát trên video.}
+Khi xem log phát hiện của Faster R-CNN, nhóm thấy biển ở xa (khoảng 8 pixel) có nhãn \emph{dao động} giữa \textit{Giới hạn tốc độ} và \textit{Cấm còn lại} qua các khung hình liên tiếp. Nhãn chỉ ổn định khi xe tới gần.
+Hiện tượng này khớp với kết quả phân tích lỗi trên ảnh tĩnh (Mục~\ref{sec:confusion}).
+Vì NMS chạy theo từng lớp, hai dự đoán khác lớp trên cùng một biển có thể cùng vượt ngưỡng. Khi đó bộ theo dõi tạo ra hai ID song song cho một biển.
+Với ứng dụng hiển thị, NMS không phân biệt lớp, hoặc bỏ phiếu nhãn theo từng ID qua nhiều khung hình, có thể khắc phục vấn đề này.

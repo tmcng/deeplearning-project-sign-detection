@@ -1,0 +1,24 @@
+% ------------------------------------------------
+% KẾT LUẬN. Ghép vào báo cáo chính bằng \input{sections/conclusion}
+% ------------------------------------------------
+
+\section{Kết luận}
+\label{sec:conclusion}
+
+Nhóm so sánh YOLOv8 và Faster R-CNN cho bài toán phát hiện biển báo giao thông Việt Nam trên ảnh camera hành trình, nơi phần lớn biển chỉ rộng vài chục pixel.
+Kết quả chính:
+\begin{itemize}
+\item \textbf{YOLOv8s ở imgsz 1280 tốt hơn trên cả hai mặt.} Nó đạt 76,8 mAP@0.5 trên test, cao hơn Faster R-CNN 7,5 điểm (có ý nghĩa thống kê), và suy luận nhanh hơn 5,8 lần (71 so với 12 FPS trên T4). Đây là cấu hình nhóm đề xuất cho ứng dụng thời gian thực.
+\item \textbf{Giữ độ phân giải là yếu tố quan trọng nhất.} Tăng kích thước đầu vào hoặc cắt ô làm AP với biển nhỏ tăng khoảng 20 điểm. Dù vậy, biển dưới 8 pixel vẫn bị bỏ sót 60--80\%.
+\item \textbf{Lỗi còn lại chủ yếu là bỏ sót biển nhỏ}, sau đó là nhầm lẫn giữa ba lớp biển tròn viền đỏ. Cân bằng lớp không sửa được loại nhầm lẫn này, vì nó chỉ chuyển lỗi giữa các lớp.
+\item \textbf{Cách làm dữ liệu ảnh hưởng tới kết quả không kém mô hình.} 17,5\% box bị gán lặp. Chia tập ngẫu nhiên thay vì theo tuyến đường làm điểm cao hơn thực tế 5,7 điểm. Nhãn test còn biển thiếu nhãn và nhãn sai lớp.
+\end{itemize}
+
+\paragraph{Hướng phát triển.}
+\begin{itemize}
+\item Thêm đầu ra độ phân giải cao hơn (tầng P2, stride 4) cho biển dưới 8 pixel.
+\item Thêm một bước phân loại lại vùng cắt quanh biển ở độ phân giải gốc, để tách ba lớp tròn viền đỏ.
+\item Rà soát lại nhãn tập test.
+\item Huấn luyện nhiều seed để ước lượng dao động giữa các lần huấn luyện.
+\item Tối ưu suy luận (TensorRT) và đánh giá bộ theo dõi trên video có nhãn.
+\end{itemize}

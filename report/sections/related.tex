@@ -1,0 +1,21 @@
+% ------------------------------------------------
+% CÁC CÔNG TRÌNH LIÊN QUAN. Ghép vào báo cáo chính bằng \input{sections/related}
+% ------------------------------------------------
+
+\section{Các công trình liên quan}
+\label{sec:related}
+
+\paragraph{Phát hiện đối tượng một và hai giai đoạn.}
+Faster R-CNN \citep{ren2015faster} là mô hình hai giai đoạn. Mạng đề xuất vùng (RPN) sinh ra các vùng có thể chứa vật thể từ một tập anchor định sẵn. Sau đó một đầu RoI phân loại và tinh chỉnh tọa độ cho từng vùng.
+YOLO \citep{redmon2016yolo} đưa bài toán về một phép hồi quy duy nhất trên lưới, chỉ cần một lần chạy qua mạng, nên nhanh hơn nhiều.
+YOLOv8 \citep{jocher2023ultralytics}, phiên bản nhóm sử dụng, không dùng anchor: mỗi điểm trên bản đồ đặc trưng dự đoán trực tiếp khoảng cách tới bốn cạnh của hộp bao. YOLOv8 cũng tách riêng nhánh phân loại và nhánh hồi quy.
+
+\paragraph{Phát hiện vật thể nhỏ.}
+Các mạng CNN giảm dần độ phân giải qua các tầng, nên vật thể nhỏ gần như biến mất ở tầng sâu.
+FPN \citep{lin2017fpn} thêm một đường từ trên xuống, đưa ngữ nghĩa của tầng sâu xuống các tầng có độ phân giải cao. Mỗi tầng phụ trách vật thể có kích thước tương ứng, và FPN cải thiện nhiều nhất ở vật thể nhỏ.
+Phần neck của YOLOv8 cũng là một kim tự tháp đặc trưng (kiểu PAN). Tuy nhiên, tầng đầu ra mịn nhất có stride 8.
+Một hướng khác là giữ nguyên độ phân giải ảnh: SAHI \citep{akyon2022sahi} cắt ảnh thành các ô chồng lấp, dự đoán trên từng ô rồi gộp kết quả.
+
+\paragraph{Mất cân bằng lớp và rò rỉ dữ liệu.}
+Với dữ liệu có phân bố đuôi dài, Repeat Factor Sampling \citep{gupta2019lvis} lặp lại các ảnh chứa lớp hiếm khi huấn luyện. Trọng số lớp trong hàm mất mát là cách phổ biến khác.
+Rò rỉ dữ liệu xảy ra khi thông tin từ tập đánh giá lọt vào quá trình huấn luyện, khiến kết quả cao hơn thực tế. Với ảnh trích từ video, các khung hình liên tiếp gần như giống hệt nhau là một nguồn rò rỉ điển hình.

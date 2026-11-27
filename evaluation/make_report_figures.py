@@ -1,7 +1,7 @@
-"""Tạo các hình cho mục Phân tích của báo cáo (docs/report/figures/).
+"""Tạo các hình cho mục Phân tích của báo cáo (report/figures/).
 
 Cách chạy (từ thư mục gốc repo, sau khi đã chạy evaluation/analyze_errors.py cho các mô hình trên test):
-    python docs/report/make_figures.py --images za_traffic_2020/traffic_train/images
+    python evaluation/make_report_figures.py --images za_traffic_2020/traffic_train/images
 
 Kết quả:
     figures/recall_theo_kich_thuoc.pdf : recall theo kích thước biển, 3 mô hình cuối, tập test
@@ -19,11 +19,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "evaluation"))
+ROOT = Path(__file__).resolve().parents[1]
 from analyze_errors import greedy, iou  # noqa: E402
 
-OUT = Path(__file__).resolve().parent / "figures"
+OUT = ROOT / "report" / "figures"
 MODELS = [("yolov8s_1280", "YOLOv8s 1280"), ("yolov8s_tiled_640_sahi", "YOLOv8s cắt ô + SAHI"),
           ("fasterrcnn_exp03", "Faster R-CNN")]
 COLORS = ["#257de0", "#f47230", "#00b894"]  # 3 màu đầu của bảng màu phân loại, đã kiểm tra mù màu
@@ -54,7 +53,6 @@ def recall_by_size():
               handlelength=1, columnspacing=0.8, labelcolor=INK)
     fig.tight_layout(pad=0.3)
     fig.savefig(OUT / "recall_theo_kich_thuoc.pdf")
-    fig.savefig(OUT / "recall_theo_kich_thuoc.png", dpi=200)
     plt.close(fig)
 
 
@@ -123,7 +121,6 @@ def examples(images_dir, model="yolov8s_1280", seed=3):
                 ax.set_title(titles[key], fontsize=8, color=INK)
     fig.tight_layout(pad=0.6, h_pad=1.2, w_pad=0.3)
     fig.savefig(OUT / "vi_du_du_doan.pdf")
-    fig.savefig(OUT / "vi_du_du_doan.png", dpi=200)
     plt.close(fig)
     return {k: len(v) for k, v in cases.items()}
 

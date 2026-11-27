@@ -1,0 +1,35 @@
+% ------------------------------------------------
+% LIMITATIONS (bắt buộc, không tính vào 8 trang). Ghép bằng \input{sections/limitations}
+% ------------------------------------------------
+
+\section*{Limitations}
+\label{sec:limitations}
+
+\paragraph{Dữ liệu.}
+\begin{itemize}
+\item \textbf{Nhãn còn nhiễu.} Box trùng đã được gộp, nhưng nhãn sai lớp và biển thiếu nhãn vẫn còn (Mục~\ref{sec:confusion} và \ref{sec:missing-labels}). Vì vậy điểm trên test là cận dưới của khả năng thật của mô hình.
+\item \textbf{Ít tuyến đường.} Val và test mỗi tập chỉ có 5 tuyến đường. Kết quả có thể lệch vài điểm tùy tuyến đường nào rơi vào tập nào (Mục~\ref{sec:leakage}).
+\item \textbf{Chỉ có một nguồn dữ liệu.} Mọi ảnh đều đến từ một bộ dữ liệu và cùng một loại camera. Nhóm chưa đánh giá riêng trên ảnh ban đêm, trời mưa, hay camera khác.
+\end{itemize}
+
+\paragraph{Phương pháp.}
+\begin{itemize}
+\item \textbf{Mỗi cấu hình chỉ huấn luyện một lần}, với một seed.
+\item \textbf{Ablation của Faster R-CNN chưa tách từng yếu tố.} Từ exp01 sang exp02, anchor, kích thước ảnh và việc mở khóa backbone thay đổi cùng lúc.
+\item \textbf{Hai họ mô hình có ngân sách huấn luyện khác nhau.} YOLO được huấn luyện 50 epoch với mosaic; Faster R-CNN được huấn luyện 30 epoch với augmentation đơn giản. Một phần khoảng cách giữa hai mô hình có thể đến từ đây.
+\end{itemize}
+
+\paragraph{Cách đánh giá.}
+\begin{itemize}
+\item \textbf{Khoảng tin cậy bootstrap chưa đầy đủ.} Nó chỉ tính dao động do chọn ảnh đánh giá, chưa tính dao động giữa các lần huấn luyện.
+\item \textbf{AP\textsubscript{L} không đáng tin.} Val chỉ có 23 biển lớn và test có 34, nên nhóm không so sánh AP\textsubscript{L}.
+\item \textbf{Ngưỡng xuất dự đoán của Faster R-CNN trên val} là 0,05 thay vì 0,001, nên mAP trên val của Faster R-CNN có thể thấp hơn thực tế một chút. Trên test thì không có vấn đề này.
+\item \textbf{Phân tích bằng mắt chỉ do một người thực hiện.} Các con số về nhãn sai và biển thiếu nhãn ở Mục~\ref{sec:analysis} đến từ một người xem, trên một mẫu nhỏ (33 và 28 trường hợp).
+\item \textbf{Đo tốc độ còn hạn chế.}
+  \begin{itemize}
+  \item Mỗi mô hình chỉ được đo một lần, trên một video.
+  \item Phép đo bao gồm chi phí ghi video, nhưng chưa tính độ trễ của camera.
+  \item Cấu hình cắt ô + SAHI chưa được đo tốc độ.
+  \item Video không có nhãn, nên không tính được độ chính xác trên video, và bộ theo dõi chưa được đánh giá bằng MOTA hay IDF1.
+  \end{itemize}
+\end{itemize}
