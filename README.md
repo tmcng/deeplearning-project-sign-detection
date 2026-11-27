@@ -38,7 +38,7 @@ Chấm bằng `pycocotools` trên tập test (871 ảnh, 5 tuyến đường mô
 │   ├── predict_yolo.py      Xuất dự đoán ra COCO JSON (thường hoặc SAHI) rồi chấm
 │   ├── tile_yolo_dataset.py Cắt ảnh thành ô 640×640 để train
 │   └── notebooks/           Notebook chạy trọn gói trên Kaggle/Colab
-├── faster_rcnn/             (C) Faster R-CNN ResNet50-FPN: train.py, evaluate.py, configs/ (xem README riêng)
+├── faster_rcnn/             (C) Faster R-CNN ResNet50-FPN: train.py, predict.py, configs/ (xem README riêng)
 ├── streaming/               (C) Suy luận thời gian thực trên video, ONNX, tracker (xem README riêng)
 ├── experiments/             Thí nghiệm phân tích (A), mỗi thư mục có README mô tả thiết kế và kết quả
 │   ├── leakage/             Rò rỉ dữ liệu: chia ngẫu nhiên và chia theo tuyến đường
@@ -100,10 +100,10 @@ python yolo/predict_yolo.py --weights runs/detect/yolov8s_tiled_640/weights/best
 
 ### 4. Faster R-CNN
 ```bash
-python faster_rcnn/train.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml
-python faster_rcnn/evaluate.py -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --split val
+python -m faster_rcnn.train -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --img-dir za_traffic_2020/traffic_train/images
+python -m faster_rcnn.predict -c faster_rcnn/configs/experiment/exp03_fpn_aug.yaml --img-dir za_traffic_2020/traffic_train/images --split val --out-pred preds/exp03_val.json
+python evaluation/evaluate.py --gt data/splits/val.json --pred preds/exp03_val.json --name exp03_val
 ```
-Cách chạy trên Kaggle và ý nghĩa các tham số: [faster_rcnn/README.md](faster_rcnn/README.md).
 
 ### 5. Đánh giá và phân tích (CPU là đủ)
 Mọi mô hình xuất dự đoán theo cùng một định dạng: `[{"image_id", "category_id", "bbox": [x, y, w, h], "score"}]`, tọa độ pixel trên ảnh gốc, `category_id` là id gốc COCO, xuất ở `conf=0.001`.
@@ -116,12 +116,128 @@ python evaluation/visualize.py      --gt data/splits/val.json --images za_traffi
 ```
 Tập test (`data/splits/test.json`) chỉ dùng cho các mô hình cuối, mỗi mô hình chấm một lần. Đổi `_val` thành `_test` trong các lệnh trên.
 
-### 6. Thí nghiệm phân tích và demo
+### 6. Thí nghiệm phân tích 
 - Rò rỉ dữ liệu: [experiments/leakage/README.md](experiments/leakage/README.md)
 - Mất cân bằng lớp: [experiments/imbalance/README.md](experiments/imbalance/README.md)
-- Suy luận thời gian thực trên video: [streaming/README.md](streaming/README.md), chạy bằng `python -m streaming.demo ...`
 
-### 7. Báo cáo cuối
+
+### 7. Demo video và streaming 
+
+Module `streaming/` nhận video/RTSP → chạy detector → tracking IoU tùy chọn →
+vẽ bounding box và ghi FPS/latency. Hỗ trợ Faster R-CNN PyTorch, YOLO và ONNX.
+Các lệnh PowerShell dưới đây chạy từ gốc repo; sửa đường dẫn video/weights theo file thực tế.
+Mỗi lần chạy cần thư mục output mới hoặc rỗng.
+
+```powershell
+python -m streaming.inference --help
+python -m streaming.export_onnx --help
+```
+
+**Demo Faster R-CNN trên video**
+
+```powershell
+python -m streaming.inference `
+  --model faster-rcnn `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.pth `
+  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --source data/DashCam/video_da_cat.mp4 `
+  --device cuda:0 `
+  --fp16 `
+  --roi-preset none `
+  --conf 0.5 `
+  --max-frames 300 `
+  --warmup 10 `
+  --track `
+  --save-video `
+  --output-dir demo_video_faster_rcnn
+```
+
+CPU: đổi thành `--device cpu`, bỏ `--fp16`. Kaggle/server không có màn hình: thêm
+`--headless`. Nhấn **q** để dừng cửa sổ demo. Có thể đổi ROI thành `right` hoặc
+`hood-cut`; cần ghi rõ vùng cắt khi so sánh hiệu năng.
+
+**Demo YOLO trên cùng video**
+
+```powershell
+python -m streaming.inference `
+  --model yolo `
+  --weights faster_rcnn/checkpoints/best.pt `
+  --source data/DashCam/video_da_cat.mp4 `
+  --device cuda:0 `
+  --imgsz 640 `
+  --roi-preset none `
+  --conf 0.5 `
+  --max-frames 300 `
+  --warmup 10 `
+  --track `
+  --save-video `
+  --output-dir demo_video_yolo
+```
+
+`best.pt` là checkpoint YOLO chuẩn bị cho demo, không phải weights Faster R-CNN.
+
+**Export Faster R-CNN sang ONNX**
+
+```powershell
+python -m streaming.export_onnx `
+  --model faster-rcnn `
+  --config faster_rcnn/configs/experiment/exp03_fpn_aug.yaml `
+  --weights faster_rcnn/checkpoints/fasterrcnn_fpn_aug_best.pth `
+  --output faster_rcnn/checkpoints/to_onnx/fasterrcnn_fpn_aug.onnx
+```
+
+**Streaming RTSP qua MediaMTX và FFmpeg**
+
+Chuẩn bị MediaMTX/FFmpeg và mở ba terminal đồng thời.
+
+Terminal 1 — khởi động server, thay đường dẫn cài đặt:
+
+```powershell
+& "C:/...../mediamtx/mediamtx.exe"
+```
+
+Terminal 2 — phát lặp video:
+
+```powershell
+ffmpeg -re -stream_loop -1 -i data/DashCam/video_da_cat.mp4 -c copy -f rtsp rtsp://127.0.0.1:8554/live/traffic
+```
+
+Terminal 3 — nhận RTSP và chạy model ONNX đã export:
+
+```powershell
+python -m streaming.inference `
+  --model onnx `
+  --weights faster_rcnn/checkpoints/to_onnx/fasterrcnn_fpn_aug.onnx `
+  --source rtsp://127.0.0.1:8554/live/traffic `
+  --device cuda:0 `
+  --roi-preset none `
+  --max-frames 300 `
+  --warmup 10 `
+  --track `
+  --save-video `
+  --output-dir demo_rtsp_faster_rcnn
+```
+
+YOLO ONNX: đổi `--model yolo`, chọn file `yolo.onnx` và output-dir khác.
+ONNX cần execution provider phù hợp đã cài để sử dụng GPU.
+
+**Kết quả trong output-dir**
+
+| File | Nội dung |
+| --- | --- |
+| `demo.mp4` | Video có bounding box/tracking ID khi bật save-video |
+| `timings.csv` | Thời gian capture, inference, pipeline và số detection từng frame |
+| `summary.json` | Trạng thái chạy, cấu hình, FPS và latency mean/p50/p95 sau warmup |
+
+Kiểm tra status/error trước khi dùng số liệu. Infer FPS khác pipeline FPS;
+pipeline latency không phải độ trễ camera-đến-màn-hình qua mạng.
+Benchmark cần cùng nguồn, số frame, warmup, ROI và chế độ hiển thị/lưu video.
+Chấm mAP từ predictions vẫn thực hiện riêng bằng `evaluation/evaluate.py`.
+
+Hướng dẫn chi tiết Kaggle, ONNX và TensorRT: [streaming/README.md](streaming/README.md).
+Notebook: [train_and_demo.ipynb](faster_rcnn/notebooks/train_and_demo.ipynb).
+
+### 8. Báo cáo cuối
 ```bash
 # Vẽ lại các hình (cần đã chạy analyze_errors.py trên test cho 3 mô hình cuối)
 python evaluation/make_report_figures.py --images za_traffic_2020/traffic_train/images

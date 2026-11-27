@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 # Tắt đa luồng nội bộ OpenCV để tránh xung đột tài nguyên CPU khi DataLoader dùng num_workers > 0
 cv2.setNumThreads(0)
@@ -126,3 +126,42 @@ class ZaloCOCODataset(Dataset):
 def collate_fn(batch: List[Any]) -> Tuple[Any, ...]:
     """Hàm gộp batch tùy chỉnh cho DataLoader để xử lý danh sách tensor kích thước biến thiên."""
     return tuple(zip(*batch))
+
+def _setup_dataloaders(
+    cfg: Dict[str, Any],
+    device: torch.device,
+    is_dry_run: bool,
+) -> Tuple[ZaloCOCODataset, ZaloCOCODataset, DataLoader, DataLoader]:
+    """Khởi tạo Datasets và DataLoaders cho tập train và validation."""
+    train_dataset = ZaloCOCODataset(
+        cfg["TRAIN_JSON_PATH"],
+        cfg["IMG_DIR"],
+        is_train=True,
+        use_augment=cfg["USE_AUGMENT"],
+    )
+    val_dataset = ZaloCOCODataset(
+        cfg["VAL_JSON_PATH"],
+        cfg["IMG_DIR"],
+        is_train=True,
+        use_augment=False,
+    )
+    num_workers = 0 if is_dry_run else cfg["NUM_WORKERS"]
+    pin_mem = device.type == "cuda"
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=cfg["BATCH_SIZE"],
+        shuffle=True,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        pin_memory=pin_mem,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=cfg["BATCH_SIZE"],
+        shuffle=False,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        pin_memory=pin_mem,
+    )
+    return train_dataset, val_dataset, train_loader, val_loader

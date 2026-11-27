@@ -246,4 +246,5 @@ run_*/
 kaggle_run_*/
 demo_*/
 logging/
+tests/
 

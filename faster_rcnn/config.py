@@ -94,7 +94,6 @@ def _apply(cfg: Dict[str, Any]) -> None:
 
 
 _apply(_cfg)
-_ensure_directories(CHECKPOINT_DIR, OUTPUT_DIR)
 
 
 def load(
@@ -113,5 +112,4 @@ def load(
     global _cfg
     _cfg = load_config(config_path, cli_overrides)
     _apply(_cfg)
-    _ensure_directories(CHECKPOINT_DIR, OUTPUT_DIR)
     return _cfg

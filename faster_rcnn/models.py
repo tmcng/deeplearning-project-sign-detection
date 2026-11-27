@@ -123,3 +123,10 @@ def build_model(cfg: Dict[str, Any]) -> nn.Module:
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     return model
+
+def resolve_device(requested="auto"):
+    if requested == "auto":
+        requested = "cuda" if torch.cuda.is_available() else "cpu"
+    if requested.startswith("cuda") and not torch.cuda.is_available():
+        raise ValueError("CUDA requested but unavailable.")
+    return torch.device(requested)
